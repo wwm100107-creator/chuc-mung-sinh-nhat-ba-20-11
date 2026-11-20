@@ -105,15 +105,53 @@ textarea:focus-visible {
 }
 
 /* =========================================================
-   WATERCOLOR BLENDING & STORYBOOK INK SHEETS
+   TRANSPARENT WATERCOLOR CUTOUTS, AURA VFX & STORYBOOK SHEETS
    ========================================================= */
-.watercolor-blend-img {
+.watercolor-cutout-img {
   display: block;
   max-width: 100%;
   height: auto;
-  mix-blend-mode: multiply;
+  filter: drop-shadow(0 14px 26px rgba(86, 52, 24, 0.13));
   user-select: none;
   -webkit-user-drag: none;
+}
+
+.vfx-levitate {
+  animation: float-levitate 5.4s ease-in-out infinite;
+}
+
+@keyframes float-levitate {
+  0%,
+  100% {
+    transform: translate3d(0, 0px, 0);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+.vfx-ambient-halo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(560px, 90vw);
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(243, 193, 90, 0.24) 0%,
+    rgba(212, 106, 98, 0.08) 46%,
+    rgba(251, 246, 238, 0) 72%
+  );
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform;
+}
+
+.watercolor-free-art-wrap {
+  position: relative;
+  width: min(460px, 86vw);
+  text-align: center;
 }
 
 .storybook-sheet {
@@ -1446,6 +1484,177 @@ textarea:focus-visible {
 }
 
 /* =========================================================
+   LIVE CONTENT EDITOR MODAL & FLOATING TRIGGER
+   ========================================================= */
+.content-editor-fab {
+  position: fixed;
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  left: 1rem;
+  z-index: 75;
+  padding: 0.52rem 1.05rem;
+  min-height: 40px;
+  border-radius: 999px;
+  border: 1.25px solid var(--ink-line);
+  background: rgba(255, 253, 248, 0.94);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: 0 8px 24px rgba(72, 43, 24, 0.14);
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.content-editor-fab:hover {
+  transform: translateY(-2px);
+  border-color: var(--crimson);
+  background: #fff7e8;
+}
+
+.editor-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(38, 24, 16, 0.56);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.editor-modal {
+  width: min(860px, 96vw);
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fffdf8;
+}
+
+.editor-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.4rem 0.85rem;
+  border-bottom: 1px solid var(--ink-line-soft);
+}
+
+.editor-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.35rem, 2.5vw, 1.8rem);
+  color: var(--crimson);
+}
+
+.editor-subtitle {
+  margin: 0.15rem 0 0;
+  font-family: var(--font-serif);
+  font-size: 0.86rem;
+  color: var(--sepia);
+}
+
+.editor-close-btn {
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--ink-line);
+  background: var(--bg-ivory);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.editor-tabs {
+  display: flex;
+  overflow-x: auto;
+  gap: 0.4rem;
+  padding: 0.7rem 1.4rem;
+  background: var(--bg-parchment);
+  border-bottom: 1px solid var(--ink-line-soft);
+}
+
+.editor-tab-btn {
+  padding: 0.42rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--ink-line);
+  background: var(--bg-card);
+  color: var(--sepia);
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.editor-tab-btn.is-active {
+  background: var(--crimson);
+  border-color: var(--crimson);
+  color: #fffaf2;
+}
+
+.editor-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.2rem 1.4rem;
+}
+
+.editor-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.editor-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.editor-subcard {
+  padding: 1rem;
+  border-radius: 16px;
+  background: var(--bg-ivory);
+  border: 1px solid var(--ink-line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.editor-subcard h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--crimson);
+}
+
+.editor-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.95rem 1.4rem;
+  border-top: 1px solid var(--ink-line-soft);
+  background: var(--bg-parchment);
+}
+
+.editor-footer-left,
+.editor-footer-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.editor-status-msg {
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--tea-green);
+}
+
+/* =========================================================
    MOBILE-FIRST & TABLET OPTIMIZATION
    ========================================================= */
 @media (max-width: 960px) {
@@ -1465,8 +1674,8 @@ textarea:focus-visible {
     justify-content: center;
   }
 
-  .watercolor-botanical-frame {
-    width: min(300px, 68vw);
+  .watercolor-free-art-wrap {
+    width: min(295px, 68vw);
   }
 }
 
@@ -1528,9 +1737,8 @@ textarea:focus-visible {
     margin-bottom: 0.35rem;
   }
 
-  .watercolor-botanical-frame {
-    width: min(220px, 54vw);
-    padding: 0.45rem;
+  .watercolor-free-art-wrap {
+    width: min(230px, 56vw);
   }
 
   .storybook-painting-caption {
@@ -1820,6 +2028,29 @@ textarea:focus-visible {
   .finale-actions .btn-secondary {
     width: 100%;
   }
+
+  .editor-row-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-header,
+  .editor-tabs,
+  .editor-body,
+  .editor-footer {
+    padding-inline: 1rem;
+  }
+
+  .editor-footer-left,
+  .editor-footer-right {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .editor-footer-right .btn-primary,
+  .editor-footer-right .btn-secondary,
+  .editor-footer-left .btn-secondary {
+    width: 100%;
+  }
 }
 
 @media (max-height: 680px) and (max-width: 768px) {
@@ -1827,8 +2058,8 @@ textarea:focus-visible {
     width: 215px;
   }
 
-  .watercolor-botanical-frame {
-    width: 175px;
+  .watercolor-free-art-wrap {
+    width: 185px;
   }
 
   .story-3d-viewport {

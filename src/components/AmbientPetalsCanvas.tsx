@@ -10,6 +10,17 @@ interface AmbientPetalsCanvasProps {
   nightMode?: boolean;
 }
 
+interface BokehOrb {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+  alpha: number;
+  phase: number;
+  color: string;
+}
+
 interface BotanicalParticle {
   x: number;
   y: number;
@@ -33,6 +44,17 @@ interface WashBloom {
   alpha: number;
   colorInner: string;
   colorOuter: string;
+  hasRing: boolean;
+}
+
+interface RocketComet {
+  x: number;
+  y: number;
+  prevX: number;
+  prevY: number;
+  vx: number;
+  vy: number;
+  targetY: number;
 }
 
 interface SparkParticle {
@@ -51,6 +73,7 @@ interface SparkParticle {
   inkColor: string;
   rot: number;
   vRot: number;
+  isStar: boolean;
 }
 
 const WATERCOLOR_SPARK_PALETTE = [
@@ -61,13 +84,33 @@ const WATERCOLOR_SPARK_PALETTE = [
   { fill: '#FFFDF6', ink: '#9A7B56' },
 ];
 
+const BOKEH_COLORS = [
+  'rgba(243, 193, 90, 0.28)',
+  'rgba(227, 154, 59, 0.22)',
+  'rgba(212, 106, 98, 0.16)',
+  'rgba(135, 166, 132, 0.18)',
+];
+
 export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsCanvasProps>(
   function AmbientPetalsCanvas({ velocityRef }, ref) {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const bokehRef = useRef<BokehOrb[]>([]);
     const botanicalsRef = useRef<BotanicalParticle[]>([]);
     const bloomsRef = useRef<WashBloom[]>([]);
+    const rocketsRef = useRef<RocketComet[]>([]);
     const sparksRef = useRef<SparkParticle[]>([]);
     const reducedMotionRef = useRef(false);
+
+    const createBokeh = (w: number, h: number): BokehOrb => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.28,
+      vy: -(0.18 + Math.random() * 0.35),
+      radius: 18 + Math.random() * 44,
+      alpha: 0.25 + Math.random() * 0.45,
+      phase: Math.random() * Math.PI * 2,
+      color: BOKEH_COLORS[Math.floor(Math.random() * BOKEH_COLORS.length)],
+    });
 
     const createBotanical = (w: number, h: number, randomY: boolean): BotanicalParticle => {
       const variants: Array<BotanicalParticle['variant']> = [
@@ -81,14 +124,14 @@ export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsC
       return {
         x: Math.random() * w,
         y: randomY ? Math.random() * h : -32,
-        vx: (Math.random() - 0.5) * 0.45,
-        vy: 0.36 + Math.random() * 0.55,
-        size: 8 + Math.random() * 7.5,
+        vx: (Math.random() - 0.5) * 0.48,
+        vy: 0.38 + Math.random() * 0.58,
+        size: 8 + Math.random() * 8,
         rotZ: Math.random() * Math.PI * 2,
-        vRotZ: (Math.random() - 0.5) * 0.018,
+        vRotZ: (Math.random() - 0.5) * 0.02,
         tilt3D: Math.random() * Math.PI * 2,
-        vTilt: 0.018 + Math.random() * 0.025,
-        alpha: 0.62 + Math.random() * 0.32,
+        vTilt: 0.02 + Math.random() * 0.028,
+        alpha: 0.65 + Math.random() * 0.32,
         variant: variants[Math.floor(Math.random() * variants.length)],
         phase: Math.random() * Math.PI * 2,
       };
@@ -97,20 +140,21 @@ export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsC
     const spawnWatercolorBurst = (originX: number, originY: number, count: number) => {
       if (reducedMotionRef.current) return;
 
-      // Soft expanding watercolor wash bloom behind the burst
       bloomsRef.current.push({
         x: originX,
         y: originY,
-        radius: 14,
-        maxRadius: 150 + Math.random() * 70,
-        alpha: 0.34,
-        colorInner: 'rgba(243, 193, 90, 0.55)',
+        radius: 10,
+        maxRadius: 170 + Math.random() * 80,
+        alpha: 0.42,
+        colorInner: 'rgba(243, 193, 90, 0.62)',
         colorOuter: 'rgba(212, 106, 98, 0)',
+        hasRing: true,
       });
 
+      // Outer petal & golden spark ring
       for (let i = 0; i < count; i += 1) {
-        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.25;
-        const speed = 2.2 + Math.random() * 6.5;
+        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.22;
+        const speed = 2.5 + Math.random() * 7.2;
         const swatch =
           WATERCOLOR_SPARK_PALETTE[Math.floor(Math.random() * WATERCOLOR_SPARK_PALETTE.length)];
         sparksRef.current.push({
@@ -119,33 +163,49 @@ export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsC
           prevX: originX,
           prevY: originY,
           vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 1.3,
-          size: 4.5 + Math.random() * 5.5,
-          alpha: 0.95,
-          decay: 0.0085 + Math.random() * 0.008,
+          vy: Math.sin(angle) * speed - 1.4,
+          size: 4.5 + Math.random() * 5.8,
+          alpha: 0.98,
+          decay: 0.008 + Math.random() * 0.008,
           gravity: 0.068,
           drag: 0.978,
           fillColor: swatch.fill,
           inkColor: swatch.ink,
           rot: Math.random() * Math.PI * 2,
-          vRot: (Math.random() - 0.5) * 0.12,
+          vRot: (Math.random() - 0.5) * 0.14,
+          isStar: i % 3 === 0,
         });
       }
+    };
+
+    const launchRocket = (startX: number, targetY: number) => {
+      if (reducedMotionRef.current) return;
+      const h = window.innerHeight;
+      rocketsRef.current.push({
+        x: startX,
+        y: h + 12,
+        prevX: startX,
+        prevY: h + 12,
+        vx: (Math.random() - 0.5) * 1.4,
+        vy: -(11 + Math.random() * 3.5),
+        targetY,
+      });
     };
 
     useImperativeHandle(ref, () => ({
       launchBurst(originX?: number, originY?: number) {
         const w = window.innerWidth;
         const h = window.innerHeight;
-        spawnWatercolorBurst(originX ?? w * 0.5, originY ?? h * 0.44, 38);
+        spawnWatercolorBurst(originX ?? w * 0.5, originY ?? h * 0.44, 44);
       },
       launchGrandCelebration() {
         const w = window.innerWidth;
         const h = window.innerHeight;
-        spawnWatercolorBurst(w * 0.5, h * 0.35, 52);
-        window.setTimeout(() => spawnWatercolorBurst(w * 0.26, h * 0.32, 42), 180);
-        window.setTimeout(() => spawnWatercolorBurst(w * 0.74, h * 0.3, 44), 360);
-        window.setTimeout(() => spawnWatercolorBurst(w * 0.5, h * 0.24, 56), 550);
+        spawnWatercolorBurst(w * 0.5, h * 0.34, 58);
+        launchRocket(w * 0.24, h * 0.28);
+        window.setTimeout(() => launchRocket(w * 0.76, h * 0.26), 170);
+        window.setTimeout(() => launchRocket(w * 0.36, h * 0.22), 340);
+        window.setTimeout(() => launchRocket(w * 0.64, h * 0.3), 510);
       },
     }));
 
@@ -169,40 +229,61 @@ export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsC
 
       if (!reducedMotionRef.current) {
         const isMobile = window.innerWidth < 640;
-        const count = isMobile ? 14 : 22;
-        botanicalsRef.current = Array.from({ length: count }, () =>
+        const bCount = isMobile ? 15 : 24;
+        const orbCount = isMobile ? 14 : 22;
+        botanicalsRef.current = Array.from({ length: bCount }, () =>
           createBotanical(window.innerWidth, window.innerHeight, true),
+        );
+        bokehRef.current = Array.from({ length: orbCount }, () =>
+          createBokeh(window.innerWidth, window.innerHeight),
         );
       }
 
-      // Delicate watercolor petal trail on touch / pointer move
+      // Interactive pointer/touch watercolor ribbon & tap ripples
       let lastTrailTime = 0;
       const onMove = (clientX: number, clientY: number) => {
         if (reducedMotionRef.current) return;
         const now = performance.now();
-        if (now - lastTrailTime < 42) return;
+        if (now - lastTrailTime < 28) return;
         lastTrailTime = now;
 
-        const swatch =
-          WATERCOLOR_SPARK_PALETTE[Math.floor(Math.random() * WATERCOLOR_SPARK_PALETTE.length)];
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 0.4 + Math.random() * 1.1;
-        sparksRef.current.push({
-          x: clientX,
-          y: clientY,
-          prevX: clientX,
-          prevY: clientY,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 0.3,
-          size: 3.8 + Math.random() * 3.2,
-          alpha: 0.78,
-          decay: 0.022,
-          gravity: 0.025,
-          drag: 0.95,
-          fillColor: swatch.fill,
-          inkColor: swatch.ink,
-          rot: Math.random() * Math.PI * 2,
-          vRot: (Math.random() - 0.5) * 0.08,
+        for (let i = 0; i < 2; i += 1) {
+          const swatch =
+            WATERCOLOR_SPARK_PALETTE[Math.floor(Math.random() * WATERCOLOR_SPARK_PALETTE.length)];
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 0.5 + Math.random() * 1.4;
+          sparksRef.current.push({
+            x: clientX + (Math.random() - 0.5) * 8,
+            y: clientY + (Math.random() - 0.5) * 8,
+            prevX: clientX,
+            prevY: clientY,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 0.35,
+            size: 3.4 + Math.random() * 3.4,
+            alpha: 0.85,
+            decay: 0.024,
+            gravity: 0.022,
+            drag: 0.95,
+            fillColor: swatch.fill,
+            inkColor: swatch.ink,
+            rot: Math.random() * Math.PI * 2,
+            vRot: (Math.random() - 0.5) * 0.1,
+            isStar: i === 0,
+          });
+        }
+      };
+
+      const onPointerDown = (e: PointerEvent) => {
+        if (reducedMotionRef.current) return;
+        bloomsRef.current.push({
+          x: e.clientX,
+          y: e.clientY,
+          radius: 6,
+          maxRadius: 72,
+          alpha: 0.35,
+          colorInner: 'rgba(243, 193, 90, 0.45)',
+          colorOuter: 'rgba(243, 193, 90, 0)',
+          hasRing: true,
         });
       };
 
@@ -213,15 +294,11 @@ export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsC
         }
       };
 
+      window.addEventListener('pointerdown', onPointerDown, { passive: true });
       window.addEventListener('pointermove', onPointerMove, { passive: true });
       window.addEventListener('touchmove', onTouchMove, { passive: true });
 
-      const drawHandPaintedPetal = (
-        len: number,
-        wid: number,
-        fill: string,
-        ink: string,
-      ) => {
+      const drawHandPaintedPetal = (len: number, wid: number, fill: string, ink: string) => {
         ctx.beginPath();
         ctx.moveTo(-len, 0);
         ctx.bezierCurveTo(-len * 0.35, -wid, len * 0.55, -wid * 0.88, len, 0);
@@ -233,7 +310,6 @@ export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsC
         ctx.lineWidth = 0.75;
         ctx.stroke();
 
-        // Fine sepia ink center vein
         ctx.beginPath();
         ctx.moveTo(-len * 0.65, 0);
         ctx.quadraticCurveTo(0, -wid * 0.14, len * 0.55, 0);
@@ -251,7 +327,7 @@ export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsC
           ctx.ellipse(radius * 0.58, 0, radius * 0.44, radius * 0.2, 0, 0, Math.PI * 2);
           ctx.fillStyle = '#FFFDF7';
           ctx.fill();
-          ctx.strokeStyle = 'rgba(110, 82, 57, 0.55)';
+          ctx.strokeStyle = 'rgba(110, 82, 57, 0.58)';
           ctx.lineWidth = 0.55;
           ctx.stroke();
           ctx.restore();
@@ -277,14 +353,36 @@ export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsC
 
         const scrollVel = velocityRef?.current ?? 0;
         const breezeX =
-          Math.sin(time * 0.0011) * (0.35 + Math.min(Math.abs(scrollVel) * 0.06, 1.6));
-        const breezeY = -scrollVel * 0.1;
+          Math.sin(time * 0.0011) * (0.38 + Math.min(Math.abs(scrollVel) * 0.065, 1.8));
+        const breezeY = -scrollVel * 0.12;
 
-        // 1. Expanding Watercolor Wash Blooms
+        // 1. Ambient Parallax Watercolor Bokeh & Sun-Motes
+        for (const orb of bokehRef.current) {
+          orb.x += orb.vx + Math.sin(time * 0.001 + orb.phase) * 0.25 + breezeX * 0.35;
+          orb.y += orb.vy + breezeY * 0.35;
+          if (orb.y < -orb.radius) orb.y = h + orb.radius;
+          if (orb.y > h + orb.radius) orb.y = -orb.radius;
+          if (orb.x < -orb.radius) orb.x = w + orb.radius;
+          if (orb.x > w + orb.radius) orb.x = -orb.radius;
+
+          const pulse = 0.55 + 0.45 * Math.sin(time * 0.0024 + orb.phase);
+          ctx.save();
+          ctx.globalAlpha = orb.alpha * pulse;
+          const g = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.radius);
+          g.addColorStop(0, orb.color);
+          g.addColorStop(1, 'rgba(251, 246, 238, 0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // 2. Expanding Watercolor Wash Blooms & Ripple Rings
         const nextBlooms: WashBloom[] = [];
         for (const b of bloomsRef.current) {
-          b.radius += (b.maxRadius - b.radius) * 0.08;
-          b.alpha *= 0.94;
+          b.radius += (b.maxRadius - b.radius) * 0.095;
+          b.alpha *= 0.935;
           if (b.alpha > 0.015) {
             nextBlooms.push(b);
             ctx.save();
@@ -296,18 +394,72 @@ export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsC
             ctx.beginPath();
             ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
             ctx.fill();
+
+            if (b.hasRing) {
+              ctx.strokeStyle = 'rgba(201, 138, 44, 0.55)';
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.arc(b.x, b.y, b.radius * 0.85, 0, Math.PI * 2);
+              ctx.stroke();
+            }
             ctx.restore();
           }
         }
         bloomsRef.current = nextBlooms;
 
-        // 2. Drifting Fine-Line Ink & Watercolor Botanicals
+        // 3. Rising Firework Comet Rockets
+        const nextRockets: RocketComet[] = [];
+        for (const r of rocketsRef.current) {
+          r.prevX = r.x;
+          r.prevY = r.y;
+          r.x += r.vx;
+          r.y += r.vy;
+          r.vy *= 0.965;
+
+          sparksRef.current.push({
+            x: r.x,
+            y: r.y,
+            prevX: r.prevX,
+            prevY: r.prevY,
+            vx: (Math.random() - 0.5) * 0.9,
+            vy: 0.7 + Math.random() * 1.1,
+            size: 2.8,
+            alpha: 0.8,
+            decay: 0.042,
+            gravity: 0.03,
+            drag: 0.92,
+            fillColor: '#F3C15A',
+            inkColor: '#8C5B1F',
+            rot: Math.random() * Math.PI,
+            vRot: 0.06,
+            isStar: true,
+          });
+
+          ctx.save();
+          ctx.strokeStyle = '#C98A2C';
+          ctx.lineWidth = 2.4;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(r.prevX, r.prevY);
+          ctx.lineTo(r.x, r.y);
+          ctx.stroke();
+          ctx.restore();
+
+          if (r.y <= r.targetY || Math.abs(r.vy) < 1.8) {
+            spawnWatercolorBurst(r.x, r.y, 52);
+          } else {
+            nextRockets.push(r);
+          }
+        }
+        rocketsRef.current = nextRockets;
+
+        // 4. Drifting Fine-Line Ink & Watercolor Botanicals
         for (let i = 0; i < botanicalsRef.current.length; i += 1) {
           const p = botanicalsRef.current[i];
-          p.x += p.vx + Math.sin(p.y * 0.012 + p.phase + time * 0.0009) * 0.38 + breezeX;
+          p.x += p.vx + Math.sin(p.y * 0.012 + p.phase + time * 0.0009) * 0.4 + breezeX;
           p.y += p.vy + breezeY * 0.5;
-          p.rotZ += p.vRotZ + scrollVel * 0.0014;
-          p.tilt3D += p.vTilt + Math.abs(scrollVel) * 0.002;
+          p.rotZ += p.vRotZ + scrollVel * 0.0016;
+          p.tilt3D += p.vTilt + Math.abs(scrollVel) * 0.0024;
 
           if (p.y > h + 36) {
             botanicalsRef.current[i] = createBotanical(w, h, false);
@@ -328,7 +480,7 @@ export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsC
             drawHandPaintedPetal(
               p.size,
               p.size * 0.48,
-              'rgba(235, 174, 72, 0.85)',
+              'rgba(235, 174, 72, 0.86)',
               'rgba(116, 72, 28, 0.65)',
             );
           } else if (p.variant === 'rose-petal') {
@@ -352,7 +504,7 @@ export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsC
           ctx.restore();
         }
 
-        // 3. Hand-Painted Petal Burst Sparks & Touch Trail
+        // 5. Hand-Painted Petal Burst Sparks & Golden Stardust Trail
         const nextSparks: SparkParticle[] = [];
         for (const s of sparksRef.current) {
           s.prevX = s.x;
@@ -367,10 +519,27 @@ export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsC
           if (s.alpha > 0.02) {
             nextSparks.push(s);
             ctx.save();
-            ctx.translate(s.x, s.y);
-            ctx.rotate(s.rot);
             ctx.globalAlpha = Math.max(0, s.alpha);
-            drawHandPaintedPetal(s.size, s.size * 0.5, s.fillColor, s.inkColor);
+
+            if (s.isStar) {
+              // Glowing golden streak + luminous pearl dot
+              ctx.strokeStyle = s.fillColor;
+              ctx.lineWidth = s.size * 0.48;
+              ctx.lineCap = 'round';
+              ctx.beginPath();
+              ctx.moveTo(s.prevX, s.prevY);
+              ctx.lineTo(s.x, s.y);
+              ctx.stroke();
+
+              ctx.fillStyle = '#FFFDF5';
+              ctx.beginPath();
+              ctx.arc(s.x, s.y, s.size * 0.35, 0, Math.PI * 2);
+              ctx.fill();
+            } else {
+              ctx.translate(s.x, s.y);
+              ctx.rotate(s.rot);
+              drawHandPaintedPetal(s.size, s.size * 0.5, s.fillColor, s.inkColor);
+            }
             ctx.restore();
           }
         }
@@ -383,6 +552,7 @@ export const AmbientPetalsCanvas = forwardRef<PetalsCanvasHandle, AmbientPetalsC
       return () => {
         window.cancelAnimationFrame(rafId);
         window.removeEventListener('resize', updateSize);
+        window.removeEventListener('pointerdown', onPointerDown);
         window.removeEventListener('pointermove', onPointerMove);
         window.removeEventListener('touchmove', onTouchMove);
       };

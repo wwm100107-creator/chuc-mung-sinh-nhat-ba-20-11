@@ -1,9 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import {
-  INITIAL_LANTERNS,
-  QUICK_WISH_SUGGESTIONS,
-  type LanternWish,
-} from '../data/birthdayContent';
+import { useSiteContent } from '../context/ContentContext';
+import { INITIAL_LANTERNS, type LanternWish } from '../data/birthdayContent';
 import { playLanternBell } from '../utils/musicBox';
 
 const STORAGE_KEY = 'snvv-ba-lanterns-v1';
@@ -15,6 +12,8 @@ interface LanternRiverProps {
 const TONES: Array<LanternWish['tone']> = ['amber', 'coral', 'ivory'];
 
 export function LanternRiver({ onBurst }: LanternRiverProps) {
+  const { content } = useSiteContent();
+
   const [lanterns, setLanterns] = useState<LanternWish[]>(() => {
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -86,25 +85,24 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
       <div className="container">
         <div className="section-heading">
           <div className="section-kicker">
-            <span>Hồ Hoa Đăng Mùa Thu 20·11</span>
+            <span>{content.finale.lanternKicker}</span>
           </div>
           <h2 id="lantern-heading" className="section-title">
-            Thả Đèn Hoa Đăng Cầu Phúc Thọ Bình An
+            {content.finale.lanternTitle}
           </h2>
-          <p className="section-desc">
-            Vuốt ngang hoặc chạm từng ngọn đèn để xem lời chúc trên mặt hồ, và tự tay thả thêm ngọn
-            đèn mới gửi tới Bà.
-          </p>
+          <p className="section-desc">{content.finale.lanternDesc}</p>
         </div>
 
-        {/* Hand-Painted Watercolor Lotus Lantern Pond Vignette */}
-        <div className="watercolor-lantern-pond-art">
+        {/* Background-Free Hand-Painted Watercolor Lotus Lantern Pond Vignette */}
+        <div className="watercolor-lantern-pond-art vfx-levitate">
           <img
             src="/images/watercolor-lanterns.png"
             alt="Tranh màu nước đèn hoa đăng hoa sen nổi trên mặt hồ cùng hoa cúc vàng và lá sen xanh"
-            className="watercolor-blend-img"
-            width={780}
-            height={440}
+            className="watercolor-cutout-img"
+            width={740}
+            height={415}
+            loading="lazy"
+            decoding="async"
           />
         </div>
 
@@ -172,9 +170,9 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
           </p>
 
           <div className="quick-chips">
-            {QUICK_WISH_SUGGESTIONS.map((chip) => (
+            {content.finale.quickSuggestions.map((chip, idx) => (
               <button
-                key={chip}
+                key={idx}
                 type="button"
                 className="quick-chip-btn"
                 onClick={() => setMessageInput(chip)}

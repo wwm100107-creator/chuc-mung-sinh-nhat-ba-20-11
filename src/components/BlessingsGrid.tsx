@@ -1,5 +1,5 @@
 import { useEffect, useRef, type TouchEvent } from 'react';
-import { BLESSINGS_LIST, SECRET_SEVENTH_BLESSING } from '../data/birthdayContent';
+import { useSiteContent } from '../context/ContentContext';
 import { clamp, useChapterScroll, useScrollProgressJump } from '../utils/useScrollStory';
 
 interface BlessingsGridProps {
@@ -8,14 +8,19 @@ interface BlessingsGridProps {
 
 export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
   const trackRef = useRef<HTMLElement | null>(null);
-  const { progress } = useChapterScroll(trackRef, 0.16);
+  const { progress, enterProgress, exitProgress } = useChapterScroll(trackRef, 0.12);
   const jumpToProgress = useScrollProgressJump(trackRef);
   const secretBurstFiredRef = useRef(false);
   const touchStartXRef = useRef<number | null>(null);
+  const { content } = useSiteContent();
 
-  const continuousStep = clamp((progress / 0.9) * 6, 0, 6);
-  const activeStep = Math.min(6, Math.round(continuousStep));
-  const isSecretStage = activeStep === 6;
+  const items = content.blessings.items;
+  const secretGift = content.blessings.secretGift;
+  const totalSteps = items.length; // 6 items -> step 6 is the 7th secret gift
+
+  const continuousStep = clamp((progress / 0.9) * totalSteps, 0, totalSteps);
+  const activeStep = Math.min(totalSteps, Math.round(continuousStep));
+  const isSecretStage = activeStep === totalSteps;
 
   useEffect(() => {
     if (isSecretStage && !secretBurstFiredRef.current) {
@@ -25,8 +30,8 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
   }, [isSecretStage, onBurst]);
 
   const handleSelectStep = (idx: number) => {
-    const safeIdx = clamp(idx, 0, 6);
-    const targetP = (safeIdx / 6) * 0.9;
+    const safeIdx = clamp(idx, 0, totalSteps);
+    const targetP = (safeIdx / Math.max(1, totalSteps)) * 0.9;
     jumpToProgress(targetP);
     onBurst(window.innerWidth * 0.5, window.innerHeight * 0.48);
   };
@@ -46,7 +51,10 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
     }
   };
 
-  const wreathRot = (progress * 36).toFixed(1);
+  const wreathRot = (progress * 42).toFixed(1);
+  const sceneOpacity = clamp(enterProgress * 1.15 - exitProgress * 0.7, 0, 1).toFixed(3);
+  const sceneY = ((1 - enterProgress) * 48 - exitProgress * 38).toFixed(1);
+  const sceneScale = (0.93 + enterProgress * 0.07 - exitProgress * 0.05).toFixed(3);
 
   return (
     <section
@@ -55,23 +63,37 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
       className="scrolly-track track-blessings"
       aria-labelledby="blessings-heading"
     >
-      <div className="sticky-stage blessings-sticky-stage">
+      <div
+        className="sticky-stage blessings-sticky-stage"
+        style={{
+          opacity: sceneOpacity,
+          transform: `translate3d(0, ${sceneY}px, 0) scale(${sceneScale})`,
+        }}
+      >
+        <div
+          className="vfx-ambient-halo"
+          aria-hidden="true"
+          style={{
+            transform: `translate(-35%, -50%) scale(${0.95 + progress * 0.35})`,
+          }}
+        />
+
         <div className="container blessings-stage-inner">
           <div className="section-heading blessings-compact-heading">
-            <div className="section-kicker">Vòng Hoa Cúc Mùa Thu Chúc Thọ</div>
+            <div className="section-kicker">{content.blessings.sectionKicker}</div>
             <h2 id="blessings-heading" className="section-title">
-              Sáu Lời Chúc Vàng &amp; Món Quà Thứ Bảy
+              {content.blessings.sectionTitle}
             </h2>
           </div>
 
           <div className="blessings-scrolly-layout">
-            {/* Left / Top: Hand-Painted Watercolor Chrysanthemum Wreath */}
+            {/* Left / Top: Background-Free Hand-Painted Watercolor Chrysanthemum Wreath */}
             <div className="petal-wheel-panel">
-              <div className="watercolor-wreath-box">
+              <div className="watercolor-wreath-box vfx-levitate">
                 <img
                   src="/images/watercolor-blessings.png"
                   alt="Tranh màu nước vòng hoa sáu đóa cúc vàng, cúc họa mi và dải lụa hồng"
-                  className="watercolor-wreath-img watercolor-blend-img"
+                  className="watercolor-wreath-img watercolor-cutout-img"
                   width={300}
                   height={300}
                   loading="lazy"
@@ -80,16 +102,18 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                 />
                 <div className="wreath-center-calligraphy">
                   <span className="wreath-center-seal">
-                    {isSecretStage ? 'Món Quà 7' : BLESSINGS_LIST[activeStep].sealLabel}
+                    {isSecretStage ? 'Món Quà 7' : (items[activeStep]?.sealLabel ?? '')}
                   </span>
                   <span className="wreath-center-num">
-                    {isSecretStage ? '07 / 07' : `0${activeStep + 1} / 06`}
+                    {isSecretStage
+                      ? `0${totalSteps + 1} / 0${totalSteps + 1}`
+                      : `0${activeStep + 1} / 0${totalSteps}`}
                   </span>
                 </div>
               </div>
 
               <div className="petal-chips-grid" role="tablist" aria-label="Chọn lời chúc">
-                {BLESSINGS_LIST.map((item, idx) => {
+                {items.map((item, idx) => {
                   const isCurrent = !isSecretStage && idx === activeStep;
                   const isOpened = isSecretStage || idx <= activeStep;
                   return (
@@ -110,7 +134,7 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                   role="tab"
                   aria-selected={isSecretStage}
                   className={`petal-chip-btn petal-chip-secret ${isSecretStage ? 'is-active' : ''}`}
-                  onClick={() => handleSelectStep(6)}
+                  onClick={() => handleSelectStep(totalSteps)}
                 >
                   <span>Quà Thứ 7</span>
                 </button>
@@ -123,12 +147,11 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
             >
-              {BLESSINGS_LIST.map((item, idx) => {
+              {items.map((item, idx) => {
                 const delta = idx - continuousStep;
                 const absDelta = Math.abs(delta);
                 const isFront = idx === activeStep && !isSecretStage;
 
-                // Horizontal + Z-depth fan so cards NEVER fly upward over the petal buttons on mobile
                 const tx = delta * 26;
                 const ty = absDelta * 10;
                 const tz = -absDelta * 85;
@@ -155,14 +178,14 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                     <h3 className="deck-card-title">{item.title}</h3>
                     <p className="deck-card-body">{item.message}</p>
                     <div className="deck-card-footer-hint">
-                      Vuốt ngang, cuộn xuống hoặc chạm chữ bên trên ({idx + 1}/6)
+                      Vuốt ngang, cuộn xuống hoặc chạm chữ bên trên ({idx + 1}/{totalSteps})
                     </div>
                   </article>
                 );
               })}
 
               {(() => {
-                const delta7 = 6 - continuousStep;
+                const delta7 = totalSteps - continuousStep;
                 const abs7 = Math.abs(delta7);
                 const opacity7 = clamp(1 - abs7 * 0.85, 0, 1);
                 const scale7 = clamp(1 - abs7 * 0.12, 0.82, 1);
@@ -181,9 +204,9 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                       pointerEvents: isSecretStage ? 'auto' : 'none',
                     }}
                   >
-                    <div className="storybook-date-tag">{SECRET_SEVENTH_BLESSING.badge}</div>
-                    <h3>{SECRET_SEVENTH_BLESSING.title}</h3>
-                    <p>{SECRET_SEVENTH_BLESSING.message}</p>
+                    <div className="storybook-date-tag">{secretGift.badge}</div>
+                    <h3>{secretGift.title}</h3>
+                    <p>{secretGift.message}</p>
                   </aside>
                 );
               })()}

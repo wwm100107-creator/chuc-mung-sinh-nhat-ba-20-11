@@ -21,21 +21,32 @@ function prefersReducedMotion(): boolean {
 
 export interface ChapterScrollState {
   progress: number;
+  enterProgress: number;
+  exitProgress: number;
   isInView: boolean;
 }
 
 /**
- * High-precision 60/120fps scroll scrubber for sticky scrollytelling tracks.
- * Continuously interpolates `progress` in [0, 1] and updates `--p` on the DOM element.
+ * Silky-smooth 60/120fps scroll scrubber for sticky scrollytelling tracks.
+ * Computes:
+ * - `enterProgress` [0..1]: as the chapter rises from bottom of viewport into pinned position
+ * - `progress` [0..1]: while the chapter is pinned
+ * - `exitProgress` [0..1]: as the chapter unpins and glides out toward the next chapter
  */
 export function useChapterScroll(
   trackRef: RefObject<HTMLElement | null>,
-  lerpFactor = 0.15,
+  lerpFactor = 0.11,
 ): ChapterScrollState {
-  const [state, setState] = useState<ChapterScrollState>({ progress: 0, isInView: false });
-  const targetRef = useRef(0);
-  const smoothedRef = useRef(0);
-  const lastStateProgressRef = useRef(0);
+  const [state, setState] = useState<ChapterScrollState>({
+    progress: 0,
+    enterProgress: 1,
+    exitProgress: 0,
+    isInView: false,
+  });
+
+  const targetRef = useRef({ p: 0, enter: 1, exit: 0 });
+  const smoothedRef = useRef({ p: 0, enter: 1, exit: 0 });
+  const lastReportedRef = useRef({ p: 0, enter: 1, exit: 0 });
   const lastInViewRef = useRef(false);
 
   useEffect(() => {
@@ -52,14 +63,18 @@ export function useChapterScroll(
       const rect = node.getBoundingClientRect();
       const vh = window.innerHeight || 800;
       const scrollable = Math.max(1, rect.height - vh);
-      const raw = clamp(-rect.top / scrollable, 0, 1);
-      const inView = rect.bottom > -160 && rect.top < vh + 160;
 
-      targetRef.current = raw;
+      const rawP = clamp(-rect.top / scrollable, 0, 1);
+      // Enter goes 0 -> 1 as rect.top moves from vh*0.85 -> 0
+      const rawEnter = clamp(1 - rect.top / (vh * 0.82), 0, 1);
+      // Exit goes 0 -> 1 in the final 16% of the track and as rect.bottom leaves
+      const rawExit = clamp((rawP - 0.86) / 0.14, 0, 1);
+      const inView = rect.bottom > -200 && rect.top < vh + 200;
+
+      targetRef.current = { p: rawP, enter: rawEnter, exit: rawExit };
 
       if (inView !== lastInViewRef.current) {
         lastInViewRef.current = inView;
-        setState((prev) => ({ ...prev, isInView: inView }));
       }
     };
 
@@ -67,22 +82,51 @@ export function useChapterScroll(
       const node = trackRef.current;
       if (!node) return;
 
-      const diff = targetRef.current - smoothedRef.current;
-      if (reduced || Math.abs(diff) < 0.0003) {
-        smoothedRef.current = targetRef.current;
+      const t = targetRef.current;
+      const s = smoothedRef.current;
+
+      const dp = t.p - s.p;
+      const dEn = t.enter - s.enter;
+      const dEx = t.exit - s.exit;
+
+      if (
+        reduced ||
+        (Math.abs(dp) < 0.00025 && Math.abs(dEn) < 0.0005 && Math.abs(dEx) < 0.0005)
+      ) {
+        s.p = t.p;
+        s.enter = t.enter;
+        s.exit = t.exit;
         active = false;
       } else {
-        smoothedRef.current += diff * lerpFactor;
+        s.p += dp * lerpFactor;
+        s.enter += dEn * (lerpFactor * 1.15);
+        s.exit += dEx * (lerpFactor * 1.15);
         rafId = window.requestAnimationFrame(tick);
       }
 
-      const p = clamp(smoothedRef.current, 0, 1);
-      node.style.setProperty('--p', p.toFixed(4));
+      const p = clamp(s.p, 0, 1);
+      const enter = clamp(s.enter, 0, 1);
+      const exit = clamp(s.exit, 0, 1);
 
-      const edgeSnapped = (p === 0 || p === 1) && lastStateProgressRef.current !== p;
-      if (edgeSnapped || Math.abs(p - lastStateProgressRef.current) >= 0.0012) {
-        lastStateProgressRef.current = p;
-        setState({ progress: p, isInView: lastInViewRef.current });
+      node.style.setProperty('--p', p.toFixed(4));
+      node.style.setProperty('--enter', enter.toFixed(4));
+      node.style.setProperty('--exit', exit.toFixed(4));
+
+      const last = lastReportedRef.current;
+      const edgeSnapped = (p === 0 || p === 1) && last.p !== p;
+      if (
+        edgeSnapped ||
+        Math.abs(p - last.p) >= 0.001 ||
+        Math.abs(enter - last.enter) >= 0.004 ||
+        Math.abs(exit - last.exit) >= 0.004
+      ) {
+        lastReportedRef.current = { p, enter, exit };
+        setState({
+          progress: p,
+          enterProgress: enter,
+          exitProgress: exit,
+          isInView: lastInViewRef.current,
+        });
       }
     };
 
@@ -95,10 +139,14 @@ export function useChapterScroll(
     };
 
     measureTarget();
-    smoothedRef.current = targetRef.current;
-    el.style.setProperty('--p', smoothedRef.current.toFixed(4));
-    lastStateProgressRef.current = smoothedRef.current;
-    setState({ progress: smoothedRef.current, isInView: lastInViewRef.current });
+    smoothedRef.current = { ...targetRef.current };
+    lastReportedRef.current = { ...targetRef.current };
+    setState({
+      progress: smoothedRef.current.p,
+      enterProgress: smoothedRef.current.enter,
+      exitProgress: smoothedRef.current.exit,
+      isInView: lastInViewRef.current,
+    });
 
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule, { passive: true });

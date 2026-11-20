@@ -1,5 +1,5 @@
 import { useMemo, useRef, type TouchEvent } from 'react';
-import { LETTER_CONTENT } from '../data/birthdayContent';
+import { useSiteContent } from '../context/ContentContext';
 import {
   clamp,
   smoothstep,
@@ -9,21 +9,22 @@ import {
 
 export function LetterSection() {
   const trackRef = useRef<HTMLElement | null>(null);
-  const { progress } = useChapterScroll(trackRef, 0.16);
+  const { progress, enterProgress, exitProgress } = useChapterScroll(trackRef, 0.12);
   const jumpToProgress = useScrollProgressJump(trackRef);
   const touchStartXRef = useRef<number | null>(null);
+  const { content } = useSiteContent();
 
-  const totalParagraphs = LETTER_CONTENT.paragraphs.length;
-  const unrollFactor = smoothstep(progress, 0.0, 0.16);
+  const paragraphs = content.letter.paragraphs;
+  const totalParagraphs = Math.max(1, paragraphs.length);
+  const unrollFactor = smoothstep(progress, 0.0, 0.18);
   const readingPos = clamp((progress - 0.08) / 0.72, 0, 0.9999);
   const activeParaIndex = Math.min(totalParagraphs - 1, Math.floor(readingPos * totalParagraphs));
   const sealStamped = progress >= 0.8;
 
-  // Progress within the currently active paragraph [0..1] for mobile word-by-word ink scrubbing
   const localParaProgress = clamp(readingPos * totalParagraphs - activeParaIndex, 0, 1);
 
   const tokenizedParagraphs = useMemo(() => {
-    const wordsPerPara = LETTER_CONTENT.paragraphs.map((p) => p.split(' '));
+    const wordsPerPara = paragraphs.map((p) => p.split(' '));
     const totalWords = wordsPerPara.reduce((acc, arr) => acc + arr.length, 0);
     let globalCursor = 0;
 
@@ -35,7 +36,7 @@ export function LetterSection() {
         return { word, ratio, localRatio };
       }),
     );
-  }, []);
+  }, [paragraphs]);
 
   const jumpParagraph = (idx: number) => {
     const safeIdx = clamp(idx, 0, totalParagraphs - 1);
@@ -59,6 +60,9 @@ export function LetterSection() {
   };
 
   const inkPercent = Math.round(readingPos * 100);
+  const sceneOpacity = clamp(enterProgress * 1.15 - exitProgress * 0.7, 0, 1).toFixed(3);
+  const sceneY = ((1 - enterProgress) * 48 - exitProgress * 38).toFixed(1);
+  const sceneScale = (0.93 + enterProgress * 0.07 - exitProgress * 0.05).toFixed(3);
 
   return (
     <section
@@ -67,13 +71,27 @@ export function LetterSection() {
       className="scrolly-track track-letter"
       aria-labelledby="letter-heading"
     >
-      <div className="sticky-stage letter-sticky-stage">
+      <div
+        className="sticky-stage letter-sticky-stage"
+        style={{
+          opacity: sceneOpacity,
+          transform: `translate3d(0, ${sceneY}px, 0) scale(${sceneScale})`,
+        }}
+      >
+        <div
+          className="vfx-ambient-halo"
+          aria-hidden="true"
+          style={{
+            transform: `translate(-50%, -50%) scale(${0.9 + progress * 0.35})`,
+          }}
+        />
+
         <div className="container letter-stage-inner">
-          <div className="watercolor-scroll-header-art">
+          <div className="watercolor-scroll-header-art vfx-levitate">
             <img
               src="/images/watercolor-scroll.png"
               alt="Tranh màu nước cuộn thư tre, bút lông gác nghiên ngọc bích và nhành cúc vàng"
-              className="watercolor-blend-img"
+              className="watercolor-cutout-img"
               width={420}
               height={235}
               loading="lazy"
@@ -102,7 +120,7 @@ export function LetterSection() {
             </div>
 
             <h2 id="letter-heading" className="letter-salutation">
-              {LETTER_CONTENT.salutation}
+              {content.letter.salutation}
             </h2>
 
             {/* Desktop: Word-by-Word Sepia & Crimson Ink Scrubbing */}
@@ -136,7 +154,7 @@ export function LetterSection() {
             {/* Mobile: Spacious Reader with Real Word-by-Word Ink Scrubbing & Touch Swipe */}
             <div className="letter-body-mobile">
               <p key={activeParaIndex} className="letter-mobile-active-para">
-                {tokenizedParagraphs[activeParaIndex].map((item, wIdx) => {
+                {(tokenizedParagraphs[activeParaIndex] ?? []).map((item, wIdx) => {
                   const delta = localParaProgress - item.localRatio * 0.85;
                   const isWritten = delta >= -0.08 || sealStamped;
                   const isBrushTip = Math.abs(delta) < 0.1 && !sealStamped;
@@ -162,7 +180,7 @@ export function LetterSection() {
                   ‹
                 </button>
                 <div className="pager-dots" role="tablist" aria-label="Chọn đoạn thư">
-                  {LETTER_CONTENT.paragraphs.map((_, idx) => (
+                  {paragraphs.map((_, idx) => (
                     <button
                       key={idx}
                       type="button"
@@ -188,8 +206,8 @@ export function LetterSection() {
             </div>
 
             <footer className={`letter-signoff ${sealStamped ? 'is-revealed' : ''}`}>
-              <p className="letter-closing">{LETTER_CONTENT.closing}</p>
-              <p className="letter-signature">{LETTER_CONTENT.signature}</p>
+              <p className="letter-closing">{content.letter.closing}</p>
+              <p className="letter-signature">{content.letter.signature}</p>
             </footer>
           </div>
         </div>

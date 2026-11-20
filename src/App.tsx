@@ -2,12 +2,14 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { AmbientPetalsCanvas, type PetalsCanvasHandle } from './components/AmbientPetalsCanvas';
 import { BirthdayCake } from './components/BirthdayCake';
 import { BlessingsGrid } from './components/BlessingsGrid';
+import { ContentEditorModal } from './components/ContentEditorModal';
 import { EnvelopeIntro } from './components/EnvelopeIntro';
 import { FinaleSection } from './components/FinaleSection';
 import { FloatingControls } from './components/FloatingControls';
 import { HeroSection } from './components/HeroSection';
 import { LanternRiver } from './components/LanternRiver';
 import { LetterSection } from './components/LetterSection';
+import { ContentProvider } from './context/ContentContext';
 import { CHAPTERS_META } from './data/birthdayContent';
 import { MusicBoxController } from './utils/musicBox';
 import { useGlobalScrollStory } from './utils/useScrollStory';
@@ -19,7 +21,6 @@ export default function App() {
   const musicBox = useMemo(() => new MusicBoxController(), []);
   const { globalProgress, activeChapterIndex, velocityRef } = useGlobalScrollStory(CHAPTER_IDS);
 
-  // Chapters 5 (BirthdayCake) and 6 (LanternRiver) enter cozy evening & twilight ambiance
   const nightMode = activeChapterIndex >= 4;
 
   useEffect(() => {
@@ -45,13 +46,14 @@ export default function App() {
   }, []);
 
   return (
-    <>
+    <ContentProvider>
       <AmbientPetalsCanvas ref={canvasRef} velocityRef={velocityRef} nightMode={nightMode} />
       <FloatingControls
         globalProgress={globalProgress}
         activeChapterIndex={activeChapterIndex}
         nightMode={nightMode}
       />
+      <ContentEditorModal />
       <div className="app-shell">
         <main>
           <EnvelopeIntro onStartMusic={handleStartMusic} onBurst={handleBurst} />
@@ -66,6 +68,6 @@ export default function App() {
           />
         </main>
       </div>
-    </>
+    </ContentProvider>
   );
 }

@@ -1,4 +1,4 @@
-import { CLOSING_POEM } from '../data/birthdayContent';
+import { useSiteContent } from '../context/ContentContext';
 
 interface FinaleSectionProps {
   onGrandCelebrate: () => void;
@@ -6,30 +6,34 @@ interface FinaleSectionProps {
 }
 
 export function FinaleSection({ onGrandCelebrate, onScrollToTop }: FinaleSectionProps) {
+  const { content } = useSiteContent();
+
   return (
     <section className="finale-section" aria-labelledby="finale-heading">
       <div className="container">
         <div className="storybook-sheet finale-medallion">
-          <div className="finale-watercolor-vignette">
+          <div className="finale-watercolor-vignette vfx-levitate">
             <img
               src="/images/watercolor-blessings.png"
               alt="Vòng hoa cúc màu nước chúc thọ Bà"
-              className="watercolor-blend-img"
+              className="watercolor-cutout-img"
               width={160}
               height={160}
+              loading="lazy"
+              decoding="async"
             />
             <span className="finale-seal-num">20·11</span>
           </div>
 
           <div className="section-kicker" style={{ marginBottom: '0.75rem' }}>
-            Lời Thơ Kết Kính Dâng Bà
+            {content.finale.finaleKicker}
           </div>
           <h2 id="finale-heading" className="section-title" style={{ marginBottom: '1.1rem' }}>
-            Mãi Khỏe Mạnh &amp; An Nhiên, Bà Nhé
+            {content.finale.finaleTitle}
           </h2>
 
           <blockquote className="finale-poem">
-            {CLOSING_POEM.map((line, index) => (
+            {content.finale.poemLines.map((line, index) => (
               <div key={index}>{line}</div>
             ))}
           </blockquote>
@@ -45,10 +49,7 @@ export function FinaleSection({ onGrandCelebrate, onScrollToTop }: FinaleSection
           </div>
         </div>
 
-        <footer className="site-footer">
-          Tấm thiệp màu nước kỷ niệm ngày sinh nhật Bà 20 tháng 11 · Làm bằng trọn vẹn yêu thương
-          từ con cháu
-        </footer>
+        <footer className="site-footer">{content.finale.footerText}</footer>
       </div>
     </section>
   );

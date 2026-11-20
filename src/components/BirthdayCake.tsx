@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSiteContent } from '../context/ContentContext';
 import { playCandlePuff, playWishCelebration } from '../utils/musicBox';
-import { useChapterScroll, useScrollProgressJump } from '../utils/useScrollStory';
+import { clamp, useChapterScroll, useScrollProgressJump } from '../utils/useScrollStory';
 
 interface BirthdayCakeProps {
   onGrandCelebrate: () => void;
 }
 
-// Exact wick tip coordinates aligned to the 5 painted beeswax candles on watercolor-cake.png (1000x1000 viewBox)
 const PAINTED_CANDLE_WICKS = [
   { id: 0, x: 427, y: 248 },
   { id: 1, x: 464, y: 243 },
@@ -17,8 +17,9 @@ const PAINTED_CANDLE_WICKS = [
 
 export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
   const trackRef = useRef<HTMLElement | null>(null);
-  const { progress } = useChapterScroll(trackRef, 0.16);
+  const { progress, enterProgress, exitProgress } = useChapterScroll(trackRef, 0.12);
   const jumpToProgress = useScrollProgressJump(trackRef);
+  const { content } = useSiteContent();
 
   const [litCandles, setLitCandles] = useState<boolean[]>([true, true, true, true, true]);
   const [smokeTick, setSmokeTick] = useState<number[]>([0, 0, 0, 0, 0]);
@@ -181,6 +182,10 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
     }
   };
 
+  const sceneOpacity = clamp(enterProgress * 1.15 - exitProgress * 0.7, 0, 1).toFixed(3);
+  const sceneY = ((1 - enterProgress) * 48 - exitProgress * 38).toFixed(1);
+  const sceneScale = (0.93 + enterProgress * 0.07 - exitProgress * 0.05).toFixed(3);
+
   return (
     <section
       id="chuong-5-thoi-nen"
@@ -188,34 +193,44 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
       className="scrolly-track track-cake"
       aria-labelledby="cake-heading"
     >
-      <div className="sticky-stage cake-sticky-stage">
+      <div
+        className="sticky-stage cake-sticky-stage"
+        style={{
+          opacity: sceneOpacity,
+          transform: `translate3d(0, ${sceneY}px, 0) scale(${sceneScale})`,
+        }}
+      >
+        <div
+          className="vfx-ambient-halo"
+          aria-hidden="true"
+          style={{
+            transform: `translate(-50%, -45%) scale(${0.85 + (activeFlameCount / 5) * 0.4})`,
+          }}
+        />
+
         <div className="container cake-stage-inner">
           <div className="section-heading cake-compact-heading">
-            <div className="section-kicker">Bánh Sinh Nhật Hoa Cúc Mùa Thu 20·11</div>
+            <div className="section-kicker">{content.cake.sectionKicker}</div>
             <h2 id="cake-heading" className="section-title">
-              Ước Một Điều Thật Bình An, Bà Nhé
+              {content.cake.sectionTitle}
             </h2>
-            <p className="section-desc">
-              Chạm trực tiếp vào ngọn nến trên tranh, bấm thổi tất cả, dùng micro — hoặc cuộn nhẹ
-              xuống để làn gió thu thổi nến.
-            </p>
+            <p className="section-desc">{content.cake.sectionDesc}</p>
           </div>
 
           <div
             className={`storybook-sheet cake-watercolor-card ${wishRevealed ? 'is-wish-revealed' : ''}`}
           >
-            <div className="watercolor-cake-painting-box" onClick={extinguishNextLit}>
+            <div className="watercolor-cake-painting-box vfx-levitate" onClick={extinguishNextLit}>
               <img
                 src="/images/watercolor-cake.png"
                 alt="Tranh màu nước bánh sinh nhật hai tầng trang trí hoa cúc vàng, nơ lụa hồng và năm ngọn nến sáp ong"
-                className="watercolor-cake-img watercolor-blend-img"
+                className="watercolor-cake-img watercolor-cutout-img"
                 width={480}
                 height={480}
                 loading="lazy"
                 decoding="async"
               />
 
-              {/* Interactive Watercolor Candle Flames & Smoke Overlay aligned to the 5 painted wicks */}
               <svg
                 viewBox="0 0 1000 1000"
                 className="watercolor-flames-overlay"
@@ -345,11 +360,8 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
 
             {wishRevealed && (
               <div className="wish-reveal-card" role="region" aria-live="polite">
-                <h3>Chúc Mừng Sinh Nhật Bà 20/11!</h3>
-                <p>
-                  Kính chúc Bà tuổi mới luôn dồi dào sức khỏe, tay chân vững vàng và nụ cười rạng
-                  rỡ mỗi sớm mai!
-                </p>
+                <h3>{content.cake.wishTitle}</h3>
+                <p>{content.cake.wishMessage}</p>
               </div>
             )}
           </div>
