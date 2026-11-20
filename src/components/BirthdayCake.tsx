@@ -6,12 +6,13 @@ interface BirthdayCakeProps {
   onGrandCelebrate: () => void;
 }
 
-const CANDLE_POSITIONS = [
-  { id: 0, x: 118, y: 114, bodyColor: '#E6B85C', stripeColor: '#FFF7E4' },
-  { id: 1, x: 164, y: 106, bodyColor: '#D46A5E', stripeColor: '#FFEFE9' },
-  { id: 2, x: 210, y: 102, bodyColor: '#C88D32', stripeColor: '#FFF7E4' },
-  { id: 3, x: 256, y: 106, bodyColor: '#D46A5E', stripeColor: '#FFEFE9' },
-  { id: 4, x: 302, y: 114, bodyColor: '#E6B85C', stripeColor: '#FFF7E4' },
+// Exact wick tip coordinates aligned to the 5 painted beeswax candles on watercolor-cake.png (1000x1000 viewBox)
+const PAINTED_CANDLE_WICKS = [
+  { id: 0, x: 427, y: 248 },
+  { id: 1, x: 464, y: 243 },
+  { id: 2, x: 500, y: 253 },
+  { id: 3, x: 538, y: 248 },
+  { id: 4, x: 574, y: 248 },
 ];
 
 export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
@@ -37,10 +38,8 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
   const scrollAutoBlowTriggeredRef = useRef(false);
 
   const remainingCount = litCandles.filter(Boolean).length;
-  // Scroll lighting progress when entering the chapter
   const awakeCount = progress < 0.02 ? 1 : Math.min(5, Math.ceil((progress / 0.22) * 5));
   const activeFlameCount = litCandles.filter((lit, idx) => lit && idx < awakeCount).length;
-  const roomLightRatio = activeFlameCount / 5;
 
   const stopMicListener = () => {
     if (micRafRef.current !== null) {
@@ -185,169 +184,55 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
       className="scrolly-track track-cake"
       aria-labelledby="cake-heading"
     >
-      <div
-        className="sticky-stage cake-sticky-stage"
-        style={{
-          ['--candle-aura' as string]: (0.06 + roomLightRatio * 0.24).toFixed(2),
-        }}
-      >
+      <div className="sticky-stage cake-sticky-stage">
         <div className="container cake-stage-inner">
           <div className="section-heading cake-compact-heading">
-            <div className="section-kicker">Nghi Thức Ánh Nến Đêm Thu 20·11</div>
+            <div className="section-kicker">Bánh Sinh Nhật Hoa Cúc Mùa Thu 20·11</div>
             <h2 id="cake-heading" className="section-title">
               Ước Một Điều Thật Bình An, Bà Nhé
             </h2>
             <p className="section-desc">
-              Chạm vào từng ngọn nến, bấm thổi tất cả, dùng micro — hoặc cuộn nhẹ xuống để làn gió
-              thu thổi nến cùng pháo hoa rực rỡ.
+              Chạm trực tiếp vào từng ngọn nến trên tranh, bấm thổi tất cả, dùng micro — hoặc cuộn
+              nhẹ xuống để làn gió thu thổi nến.
             </p>
           </div>
 
-          <div className="cake-dark-card vfx-hearth-card">
-            <div className="cake-svg-wrap">
+          <div className="storybook-sheet cake-watercolor-card">
+            <div className="watercolor-cake-painting-box">
+              <img
+                src="/images/watercolor-cake.png"
+                alt="Tranh màu nước bánh sinh nhật hai tầng trang trí hoa cúc vàng, nơ lụa hồng và năm ngọn nến sáp ong"
+                className="watercolor-cake-img watercolor-blend-img"
+                width={520}
+                height={520}
+              />
+
+              {/* Interactive Watercolor Candle Flames & Smoke Overlay aligned to the 5 painted wicks */}
               <svg
-                viewBox="0 0 420 330"
-                className="cake-svg"
-                role="img"
-                aria-label="Chiếc bánh sinh nhật hai tầng trang trí hoa cúc vàng với năm ngọn nến"
+                viewBox="0 0 1000 1000"
+                className="watercolor-flames-overlay"
+                aria-label="Năm ngọn nến tương tác trên bánh sinh nhật"
               >
                 <defs>
-                  <radialGradient id="candleGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#FFF0B3" stopOpacity="0.95" />
-                    <stop offset="45%" stopColor="#F59E0B" stopOpacity="0.45" />
-                    <stop offset="100%" stopColor="#F59E0B" stopOpacity="0" />
+                  <radialGradient id="watercolorFlameHalo" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#FCE08B" stopOpacity="0.88" />
+                    <stop offset="55%" stopColor="#E8A23A" stopOpacity="0.32" />
+                    <stop offset="100%" stopColor="#E8A23A" stopOpacity="0" />
                   </radialGradient>
-                  <linearGradient id="cakeCreamTop" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FFFDF7" />
-                    <stop offset="100%" stopColor="#F5E5CB" />
-                  </linearGradient>
-                  <linearGradient id="cakeCreamBottom" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FAF0DD" />
-                    <stop offset="100%" stopColor="#ECD2AC" />
-                  </linearGradient>
-                  <linearGradient id="cakePlatter" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#B87E28" />
-                    <stop offset="50%" stopColor="#F1CA78" />
-                    <stop offset="100%" stopColor="#B87E28" />
-                  </linearGradient>
                 </defs>
 
-                {/* Dynamic overarching candlelight pool on cake */}
-                <ellipse
-                  cx="210"
-                  cy="125"
-                  rx={120 + activeFlameCount * 16}
-                  ry={55 + activeFlameCount * 9}
-                  fill="url(#candleGlow)"
-                  opacity={0.18 + roomLightRatio * 0.55}
-                />
-
-                {/* Warm pedestal & shadow */}
-                <ellipse cx="210" cy="306" rx="168" ry="16" fill="rgba(0, 0, 0, 0.42)" />
-                <path d="M180 282 L240 282 L254 303 L166 303 Z" fill="url(#cakePlatter)" />
-                <ellipse
-                  cx="210"
-                  cy="282"
-                  rx="164"
-                  ry="18"
-                  fill="#E8C272"
-                  stroke="#B67C27"
-                  strokeWidth="2"
-                />
-                <ellipse cx="210" cy="280" rx="146" ry="12" fill="#FFF9EE" />
-
-                {/* Bottom cake tier */}
-                <path
-                  d="M78 196 L78 268 C78 282 342 282 342 268 L342 196 Z"
-                  fill="url(#cakeCreamBottom)"
-                  stroke="#D9B783"
-                  strokeWidth="1.5"
-                />
-                <path
-                  d="M78 242 C130 256 290 256 342 242 L342 256 C290 270 130 270 78 256 Z"
-                  fill="#9B2C2C"
-                />
-                <ellipse
-                  cx="210"
-                  cy="196"
-                  rx="132"
-                  ry="16"
-                  fill="#FBF2E1"
-                  stroke="#DFC08E"
-                  strokeWidth="1.2"
-                />
-
-                {/* Frosting scallops */}
-                <path
-                  d="M80 198 Q98 220 116 202 Q134 224 154 203 Q174 226 196 204 Q216 226 238 204 Q258 224 278 203 Q298 222 318 201 Q332 215 340 198"
-                  fill="#FFFDF8"
-                  stroke="#E5C89A"
-                  strokeWidth="1.2"
-                />
-
-                {/* Top cake tier */}
-                <path
-                  d="M104 128 L104 190 C104 202 316 202 316 190 L316 128 Z"
-                  fill="url(#cakeCreamTop)"
-                  stroke="#DFC08E"
-                  strokeWidth="1.5"
-                />
-                <ellipse
-                  cx="210"
-                  cy="128"
-                  rx="106"
-                  ry="14"
-                  fill="#FFFDF9"
-                  stroke="#E5C89A"
-                  strokeWidth="1.5"
-                />
-
-                {[136, 173, 210, 247, 284].map((cx) => (
-                  <g key={`blossom-${cx}`} transform={`translate(${cx}, 168)`}>
-                    <circle r="7.5" fill="#E6B85C" fillOpacity="0.88" />
-                    <circle r="3.2" fill="#9B2C2C" />
-                  </g>
-                ))}
-                {[112, 160, 210, 260, 308].map((cx) => (
-                  <circle key={`pearl-${cx}`} cx={cx} cy="228" r="4" fill="#E6B85C" />
-                ))}
-
-                {/* 20·11 badge */}
-                <rect
-                  x="176"
-                  y="224"
-                  width="68"
-                  height="30"
-                  rx="15"
-                  fill="#FFFDF8"
-                  stroke="#C88D32"
-                  strokeWidth="1.6"
-                />
-                <text
-                  x="210"
-                  y="244"
-                  textAnchor="middle"
-                  fill="#9B2C2C"
-                  fontFamily="Cormorant Garamond, Georgia, serif"
-                  fontWeight="700"
-                  fontSize="16"
-                >
-                  20 · 11
-                </text>
-
-                {/* 5 Interactive Beeswax Candles */}
-                {CANDLE_POSITIONS.map((candle, idx) => {
+                {PAINTED_CANDLE_WICKS.map((wick, idx) => {
                   const isLit = litCandles[idx] && idx < awakeCount;
                   const smokeCount = smokeTick[idx];
                   return (
                     <g
-                      key={candle.id}
+                      key={wick.id}
                       className="candle-hit"
                       role="button"
                       tabIndex={0}
                       aria-label={
                         litCandles[idx]
-                          ? `Ngọn nến số ${idx + 1} đang cháy — bấm để thổi tắt`
+                          ? `Ngọn nến số ${idx + 1} đang cháy — chạm để thổi tắt`
                           : `Ngọn nến số ${idx + 1} đã thổi tắt`
                       }
                       onClick={() => extinguishCandle(idx)}
@@ -358,71 +243,45 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                         }
                       }}
                     >
+                      {/* Generous touch target around each painted candle */}
                       <rect
-                        x={candle.x - 18}
-                        y={candle.y - 54}
-                        width="36"
-                        height="94"
+                        x={wick.x - 24}
+                        y={wick.y - 80}
+                        width="48"
+                        height="220"
                         fill="transparent"
-                      />
-
-                      <rect
-                        x={candle.x - 6}
-                        y={candle.y - 2}
-                        width="12"
-                        height="34"
-                        rx="3"
-                        fill={candle.bodyColor}
-                        stroke="#9F6B1E"
-                        strokeWidth="1"
-                        className="candle-body-outline"
-                      />
-                      <path
-                        d={`M${candle.x - 6} ${candle.y + 10} L${candle.x + 6} ${candle.y + 4}`}
-                        stroke={candle.stripeColor}
-                        strokeWidth="2"
-                        strokeOpacity="0.65"
-                      />
-                      <path
-                        d={`M${candle.x - 6} ${candle.y + 22} L${candle.x + 6} ${candle.y + 16}`}
-                        stroke={candle.stripeColor}
-                        strokeWidth="2"
-                        strokeOpacity="0.65"
-                      />
-
-                      <line
-                        x1={candle.x}
-                        y1={candle.y - 2}
-                        x2={candle.x}
-                        y2={candle.y - 9}
-                        stroke="#3A281E"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
                       />
 
                       {isLit ? (
                         <g>
-                          <circle cx={candle.x} cy={candle.y - 22} r="28" fill="url(#candleGlow)" />
+                          <circle
+                            cx={wick.x}
+                            cy={wick.y - 26}
+                            r="48"
+                            fill="url(#watercolorFlameHalo)"
+                          />
                           <path
                             className="flame-outer"
-                            d={`M${candle.x} ${candle.y - 40} C${candle.x + 8.5} ${candle.y - 27}, ${candle.x + 7.5} ${candle.y - 12}, ${candle.x} ${candle.y - 10} C${candle.x - 7.5} ${candle.y - 12}, ${candle.x - 8.5} ${candle.y - 27}, ${candle.x} ${candle.y - 40} Z`}
-                            fill="#F59E0B"
+                            d={`M${wick.x} ${wick.y - 62} C${wick.x + 15} ${wick.y - 38}, ${wick.x + 13} ${wick.y - 12}, ${wick.x} ${wick.y - 4} C${wick.x - 13} ${wick.y - 12}, ${wick.x - 15} ${wick.y - 38}, ${wick.x} ${wick.y - 62} Z`}
+                            fill="#E89A32"
+                            stroke="#8F4E14"
+                            strokeWidth="2"
                           />
                           <path
                             className="flame-inner"
-                            d={`M${candle.x} ${candle.y - 31} C${candle.x + 4} ${candle.y - 22}, ${candle.x + 4} ${candle.y - 14}, ${candle.x} ${candle.y - 12} C${candle.x - 4} ${candle.y - 14}, ${candle.x - 4} ${candle.y - 22}, ${candle.x} ${candle.y - 31} Z`}
-                            fill="#FFF8D6"
+                            d={`M${wick.x} ${wick.y - 44} C${wick.x + 7} ${wick.y - 30}, ${wick.x + 7} ${wick.y - 14}, ${wick.x} ${wick.y - 8} C${wick.x - 7} ${wick.y - 14}, ${wick.x - 7} ${wick.y - 30}, ${wick.x} ${wick.y - 44} Z`}
+                            fill="#FFF7D6"
                           />
                         </g>
                       ) : (
                         smokeCount > 0 && (
                           <path
-                            key={`smoke-${candle.id}-${smokeCount}`}
+                            key={`smoke-${wick.id}-${smokeCount}`}
                             className="candle-smoke"
-                            d={`M${candle.x} ${candle.y - 10} C${candle.x - 5} ${candle.y - 20}, ${candle.x + 6} ${candle.y - 28}, ${candle.x - 2} ${candle.y - 40}`}
+                            d={`M${wick.x} ${wick.y - 8} C${wick.x - 14} ${wick.y - 34}, ${wick.x + 16} ${wick.y - 58}, ${wick.x - 6} ${wick.y - 88}`}
                             fill="none"
-                            stroke="#E8D8C8"
-                            strokeWidth="2.2"
+                            stroke="#8A6E56"
+                            strokeWidth="3.5"
                             strokeLinecap="round"
                           />
                         )
@@ -433,22 +292,22 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
               </svg>
             </div>
 
-            <div className="cake-progress-text cake-progress-dark" role="status" aria-live="polite">
+            <div className="cake-progress-text" role="status" aria-live="polite">
               {remainingCount > 0
-                ? `Đang thắp sáng ${activeFlameCount} / 5 ngọn nến ước nguyện`
-                : 'Cả 5 ngọn nến đã tắt! Điều ước bình an đã sáng rực bầu trời'}
+                ? `Đang thắp sáng ${activeFlameCount} / 5 ngọn nến sáp ong — chạm vào ngọn nến để thổi`
+                : 'Cả 5 ngọn nến đã tắt! Điều ước bình an đã gửi tới bầu trời thu'}
             </div>
 
             <div className="cake-controls">
               {remainingCount > 0 ? (
                 <>
-                  <button type="button" className="btn-primary vfx-glow-btn" onClick={blowAllRemaining}>
+                  <button type="button" className="btn-primary" onClick={blowAllRemaining}>
                     <span>Thổi Tắt Tất Cả Nến</span>
                   </button>
 
                   <button
                     type="button"
-                    className="btn-secondary btn-dark-ghost"
+                    className="btn-secondary"
                     onClick={toggleMicrophone}
                     aria-pressed={micActive}
                   >
@@ -456,11 +315,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   </button>
                 </>
               ) : (
-                <button
-                  type="button"
-                  className="btn-secondary btn-dark-ghost"
-                  onClick={relightCandles}
-                >
+                <button type="button" className="btn-secondary" onClick={relightCandles}>
                   <span>Thắp Lại Nến Để Thổi Tiếp</span>
                 </button>
               )}
@@ -475,10 +330,10 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
               </div>
             )}
 
-            {micMessage && <p className="mic-note-dark">{micMessage}</p>}
+            {micMessage && <p className="mic-note-sepia">{micMessage}</p>}
 
             {wishRevealed && (
-              <div className="wish-reveal-card vfx-foil-card" role="region" aria-live="polite">
+              <div className="wish-reveal-card" role="region" aria-live="polite">
                 <h3>Chúc Mừng Sinh Nhật Bà 20/11!</h3>
                 <p>
                   Kính chúc Bà tuổi mới luôn dồi dào sức khỏe, tay chân vững vàng và nụ cười rạng
