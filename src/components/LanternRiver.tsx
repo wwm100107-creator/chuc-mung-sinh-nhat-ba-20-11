@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Flame, Send } from 'lucide-react';
+import { Flame, Send, Sparkles } from 'lucide-react';
 import {
   INITIAL_LANTERNS,
   QUICK_WISH_SUGGESTIONS,
@@ -35,6 +35,7 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
   const [senderInput, setSenderInput] = useState('');
   const [messageInput, setMessageInput] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [launchingId, setLaunchingId] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -54,8 +55,9 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
       return;
     }
 
+    const newId = `l-${Date.now()}`;
     const newLantern: LanternWish = {
-      id: `l-${Date.now()}`,
+      id: newId,
       sender: senderInput.trim() || 'Người thương của Bà',
       message: trimmedMessage,
       tone: TONES[lanterns.length % TONES.length],
@@ -64,11 +66,16 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
 
     setLanterns((prev) => [newLantern, ...prev]);
     setSelectedId(newLantern.id);
+    setLaunchingId(newId);
     setMessageInput('');
     setSenderInput('');
-    setFeedback('Đèn hoa đăng mang lời chúc đã trôi nhẹ lên mặt hồ ấm áp!');
+    setFeedback('Đèn hoa đăng mới đã tỏa sáng và trôi nhẹ lên mặt hồ!');
     playLanternBell();
-    onBurst(window.innerWidth * 0.5, window.innerHeight * 0.38);
+    onBurst(window.innerWidth * 0.5, window.innerHeight * 0.36);
+
+    window.setTimeout(() => {
+      setLaunchingId((current) => (current === newId ? null : current));
+    }, 1400);
   };
 
   return (
@@ -87,20 +94,24 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
 
       <div className="container">
         <div className="section-heading">
-          <div className="section-kicker">Chương 06 · Đêm Hoa Đăng 20·11</div>
+          <div className="section-kicker">
+            <Sparkles size={14} aria-hidden="true" />
+            <span>Hồ Hoa Đăng Đêm Thu 20·11</span>
+          </div>
           <h2 id="lantern-heading" className="section-title">
-            Thả Đèn Hoa Đăng Gửi Lời Chúc Tới Bà
+            Thả Đèn Hoa Đăng Cầu Phúc Thọ Bình An
           </h2>
           <p className="section-desc">
-            Vuốt ngang hoặc chạm từng ngọn đèn để đọc lời nguyện cầu bình an, và thả thêm đèn hoa
-            đăng từ con cháu.
+            Vuốt ngang hoặc chạm từng ngọn đèn để xem lời chúc lung linh trên mặt nước, và tự tay
+            thả thêm ngọn đèn mới gửi tới Bà.
           </p>
         </div>
 
-        {/* Horizontal snap carousel on mobile, clean grid on desktop */}
+        {/* Horizontal snap carousel on mobile, glowing pond grid on desktop */}
         <div className="lantern-pond-stage">
           {lanterns.map((lantern) => {
             const isSelected = lantern.id === activeLantern?.id;
+            const isNewlyLaunched = lantern.id === launchingId;
             const flameFill =
               lantern.tone === 'coral'
                 ? '#F08A6C'
@@ -112,22 +123,37 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
               <button
                 key={lantern.id}
                 type="button"
-                className={`lantern-float-card ${isSelected ? 'is-selected' : ''}`}
+                className={`lantern-float-card ${isSelected ? 'is-selected' : ''} ${isNewlyLaunched ? 'is-launching' : ''}`}
                 onClick={() => setSelectedId(lantern.id)}
               >
                 <div className="lantern-card-header">
                   <span className="lantern-sender">{lantern.sender}</span>
-                  <svg width="26" height="24" viewBox="0 0 26 24" aria-hidden="true">
-                    <path
-                      d="M13 3 C16 8, 22 10, 23 15 C18 18, 8 18, 3 15 C4 10, 10 8, 13 3 Z"
-                      fill={flameFill}
-                      fillOpacity="0.92"
-                    />
-                    <circle cx="13" cy="11" r="2.6" fill="#FFFDF5" />
-                    <ellipse cx="13" cy="18.5" rx="10" ry="2.2" fill="#C88D32" fillOpacity="0.55" />
-                  </svg>
+                  <div className="lotus-icon-wrap" aria-hidden="true">
+                    <svg width="34" height="30" viewBox="0 0 34 30">
+                      <ellipse
+                        cx="17"
+                        cy="25"
+                        rx="14"
+                        ry="3"
+                        fill={flameFill}
+                        fillOpacity="0.28"
+                      />
+                      <path
+                        d="M17 3 C21 9, 28 12, 30 18 C23 22, 11 22, 4 18 C6 12, 13 9, 17 3 Z"
+                        fill={flameFill}
+                        fillOpacity="0.94"
+                      />
+                      <path
+                        d="M17 6 C19.5 11, 23 13, 24 18 C20 20, 14 20, 10 18 C11 13, 14.5 11, 17 6 Z"
+                        fill="#FFF8E1"
+                        fillOpacity="0.72"
+                      />
+                      <circle cx="17" cy="14" r="3" fill="#FFFFFF" />
+                    </svg>
+                  </div>
                 </div>
                 <p className="lantern-quote">“{lantern.message}”</p>
+                <div className="lantern-water-ripple" aria-hidden="true" />
               </button>
             );
           })}
@@ -142,17 +168,17 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
                   style={{ verticalAlign: 'text-bottom', marginRight: 6 }}
                   aria-hidden="true"
                 />
-                Đèn đang sáng · Từ {activeLantern.sender}:
+                Hoa đăng đang tỏa sáng · Từ {activeLantern.sender}:
               </strong>{' '}
               <span>“{activeLantern.message}”</span>
             </div>
           </div>
         )}
 
-        <form className="lantern-form-card" onSubmit={handleReleaseLantern}>
+        <form className="lantern-form-card vfx-foil-card" onSubmit={handleReleaseLantern}>
           <h3 className="lantern-form-title">Viết Lời Chúc &amp; Thả Thêm Một Ngọn Đèn</h3>
           <p style={{ margin: 0, color: 'var(--sepia)', fontSize: '0.96rem' }}>
-            Chạm nhanh một câu chúc gợi ý hoặc tự viết lời nhắn gửi Bà:
+            Chạm nhanh một câu chúc gợi ý bên dưới hoặc tự viết lời nhắn gửi Bà:
           </p>
 
           <div className="quick-chips">
@@ -197,10 +223,10 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
           </div>
 
           <div className="lantern-form-footer">
-            <span style={{ color: 'var(--tea-green)', fontSize: '0.92rem', fontWeight: 500 }}>
-              {feedback ?? 'Đèn mới sẽ nổi sáng ngay trên dòng sông kỷ niệm.'}
+            <span style={{ color: 'var(--tea-green)', fontSize: '0.92rem', fontWeight: 600 }}>
+              {feedback ?? 'Đèn mới sẽ bay lên và tỏa sáng ngay trên mặt hồ kỷ niệm.'}
             </span>
-            <button type="submit" className="btn-primary">
+            <button type="submit" className="btn-primary vfx-glow-btn">
               <Send size={17} aria-hidden="true" />
               <span>Thả Đèn Hoa Đăng</span>
             </button>

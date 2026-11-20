@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 
-function clamp(val: number, min: number, max: number): number {
+export function clamp(val: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, val));
+}
+
+export function remap(val: number, inMin: number, inMax: number): number {
+  if (inMax <= inMin) return 0;
+  return clamp((val - inMin) / (inMax - inMin), 0, 1);
+}
+
+export function smoothstep(val: number, edge0: number, edge1: number): number {
+  const t = remap(val, edge0, edge1);
+  return t * t * (3 - 2 * t);
 }
 
 function prefersReducedMotion(): boolean {
@@ -15,13 +25,12 @@ export interface ChapterScrollState {
 }
 
 /**
- * Tracks smoothed scroll progress [0, 1] across a tall sticky chapter track.
- * Simultaneously writes `--p` directly onto `trackRef.current` for 60fps CSS interpolation,
- * while throttling React state updates to avoid unnecessary re-renders on mobile devices.
+ * High-precision 60/120fps scroll scrubber for sticky scrollytelling tracks.
+ * Continuously interpolates `progress` in [0, 1] and updates `--p` on the DOM element.
  */
 export function useChapterScroll(
   trackRef: RefObject<HTMLElement | null>,
-  lerpFactor = 0.16,
+  lerpFactor = 0.15,
 ): ChapterScrollState {
   const [state, setState] = useState<ChapterScrollState>({ progress: 0, isInView: false });
   const targetRef = useRef(0);
@@ -44,7 +53,7 @@ export function useChapterScroll(
       const vh = window.innerHeight || 800;
       const scrollable = Math.max(1, rect.height - vh);
       const raw = clamp(-rect.top / scrollable, 0, 1);
-      const inView = rect.bottom > -120 && rect.top < vh + 120;
+      const inView = rect.bottom > -160 && rect.top < vh + 160;
 
       targetRef.current = raw;
 
@@ -59,7 +68,7 @@ export function useChapterScroll(
       if (!node) return;
 
       const diff = targetRef.current - smoothedRef.current;
-      if (reduced || Math.abs(diff) < 0.0008) {
+      if (reduced || Math.abs(diff) < 0.0003) {
         smoothedRef.current = targetRef.current;
         active = false;
       } else {
@@ -71,7 +80,7 @@ export function useChapterScroll(
       node.style.setProperty('--p', p.toFixed(4));
 
       const edgeSnapped = (p === 0 || p === 1) && lastStateProgressRef.current !== p;
-      if (edgeSnapped || Math.abs(p - lastStateProgressRef.current) >= 0.008) {
+      if (edgeSnapped || Math.abs(p - lastStateProgressRef.current) >= 0.0012) {
         lastStateProgressRef.current = p;
         setState({ progress: p, isInView: lastInViewRef.current });
       }
@@ -85,7 +94,6 @@ export function useChapterScroll(
       }
     };
 
-    // Initial calculation
     measureTarget();
     smoothedRef.current = targetRef.current;
     el.style.setProperty('--p', smoothedRef.current.toFixed(4));
@@ -111,9 +119,6 @@ export interface GlobalScrollStory {
   velocityRef: RefObject<number>;
 }
 
-/**
- * Tracks overall document scroll progress, active chapter index, and smoothed scroll velocity.
- */
 export function useGlobalScrollStory(chapterIds: string[]): GlobalScrollStory {
   const [globalProgress, setGlobalProgress] = useState(0);
   const [activeChapterIndex, setActiveChapterIndex] = useState(0);
@@ -130,14 +135,18 @@ export function useGlobalScrollStory(chapterIds: string[]): GlobalScrollStory {
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
       const rawGlobal = docHeight > 0 ? clamp(sy / docHeight, 0, 1) : 0;
 
-      if (Math.abs(rawGlobal - lastReportedGlobalRef.current) >= 0.004 || rawGlobal === 0 || rawGlobal === 1) {
+      if (
+        Math.abs(rawGlobal - lastReportedGlobalRef.current) >= 0.002 ||
+        rawGlobal === 0 ||
+        rawGlobal === 1
+      ) {
         lastReportedGlobalRef.current = rawGlobal;
         setGlobalProgress(rawGlobal);
       }
 
-      const delta = clamp(sy - lastScrollYRef.current, -40, 40);
+      const delta = clamp(sy - lastScrollYRef.current, -50, 50);
       lastScrollYRef.current = sy;
-      velocityRef.current = velocityRef.current * 0.65 + delta * 0.35;
+      velocityRef.current = velocityRef.current * 0.62 + delta * 0.38;
 
       const threshold = (window.innerHeight || 800) * 0.48;
       let currentIdx = 0;
@@ -152,8 +161,8 @@ export function useGlobalScrollStory(chapterIds: string[]): GlobalScrollStory {
     };
 
     const decayVelocity = () => {
-      velocityRef.current *= 0.9;
-      if (Math.abs(velocityRef.current) > 0.15) {
+      velocityRef.current *= 0.91;
+      if (Math.abs(velocityRef.current) > 0.12) {
         rafId = window.requestAnimationFrame(decayVelocity);
       } else {
         velocityRef.current = 0;

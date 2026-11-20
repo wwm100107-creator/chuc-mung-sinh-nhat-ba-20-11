@@ -17,7 +17,7 @@ const CANDLE_POSITIONS = [
 
 export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
   const trackRef = useRef<HTMLElement | null>(null);
-  const { progress } = useChapterScroll(trackRef, 0.16);
+  const { progress } = useChapterScroll(trackRef, 0.15);
   const jumpToProgress = useScrollProgressJump(trackRef);
 
   const [litCandles, setLitCandles] = useState<boolean[]>([true, true, true, true, true]);
@@ -39,7 +39,9 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
 
   const remainingCount = litCandles.filter(Boolean).length;
   // Scroll lighting progress when entering the chapter
-  const awakeCount = progress < 0.03 ? 1 : Math.min(5, Math.ceil((progress / 0.24) * 5));
+  const awakeCount = progress < 0.02 ? 1 : Math.min(5, Math.ceil((progress / 0.22) * 5));
+  const activeFlameCount = litCandles.filter((lit, idx) => lit && idx < awakeCount).length;
+  const roomLightRatio = activeFlameCount / 5;
 
   const stopMicListener = () => {
     if (micRafRef.current !== null) {
@@ -79,11 +81,10 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
     indices.forEach((candleIdx, step) => {
       window.setTimeout(() => {
         extinguishCandle(candleIdx);
-      }, step * 130);
+      }, step * 125);
     });
   };
 
-  // Gentle scroll breeze blows remaining candles when scrolling past 0.85
   useEffect(() => {
     if (progress >= 0.86 && remainingCount > 0 && !scrollAutoBlowTriggeredRef.current) {
       scrollAutoBlowTriggeredRef.current = true;
@@ -185,20 +186,25 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
       className="scrolly-track track-cake"
       aria-labelledby="cake-heading"
     >
-      <div className="sticky-stage cake-sticky-stage">
+      <div
+        className="sticky-stage cake-sticky-stage"
+        style={{
+          ['--candle-aura' as string]: (0.06 + roomLightRatio * 0.24).toFixed(2),
+        }}
+      >
         <div className="container cake-stage-inner">
           <div className="section-heading cake-compact-heading">
-            <div className="section-kicker">Chương 05 · Đêm Nến Ấm 20·11</div>
+            <div className="section-kicker">Nghi Thức Ánh Nến Đêm Thu 20·11</div>
             <h2 id="cake-heading" className="section-title">
               Ước Một Điều Thật Bình An, Bà Nhé
             </h2>
             <p className="section-desc">
               Chạm vào từng ngọn nến, bấm thổi tất cả, dùng micro — hoặc cuộn nhẹ xuống để làn gió
-              thu thổi nến cùng lời chúc.
+              thu thổi nến cùng pháo hoa rực rỡ.
             </p>
           </div>
 
-          <div className="cake-dark-card">
+          <div className="cake-dark-card vfx-hearth-card">
             <div className="cake-svg-wrap">
               <svg
                 viewBox="0 0 420 330"
@@ -208,8 +214,9 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
               >
                 <defs>
                   <radialGradient id="candleGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#FFE89E" stopOpacity="0.92" />
-                    <stop offset="100%" stopColor="#FFE89E" stopOpacity="0" />
+                    <stop offset="0%" stopColor="#FFF0B3" stopOpacity="0.95" />
+                    <stop offset="45%" stopColor="#F59E0B" stopOpacity="0.45" />
+                    <stop offset="100%" stopColor="#F59E0B" stopOpacity="0" />
                   </radialGradient>
                   <linearGradient id="cakeCreamTop" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#FFFDF7" />
@@ -226,8 +233,18 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   </linearGradient>
                 </defs>
 
+                {/* Dynamic overarching candlelight pool on cake */}
+                <ellipse
+                  cx="210"
+                  cy="125"
+                  rx={120 + activeFlameCount * 16}
+                  ry={55 + activeFlameCount * 9}
+                  fill="url(#candleGlow)"
+                  opacity={0.18 + roomLightRatio * 0.55}
+                />
+
                 {/* Warm pedestal & shadow */}
-                <ellipse cx="210" cy="306" rx="168" ry="16" fill="rgba(0, 0, 0, 0.35)" />
+                <ellipse cx="210" cy="306" rx="168" ry="16" fill="rgba(0, 0, 0, 0.42)" />
                 <path d="M180 282 L240 282 L254 303 L166 303 Z" fill="url(#cakePlatter)" />
                 <ellipse
                   cx="210"
@@ -288,7 +305,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
 
                 {[136, 173, 210, 247, 284].map((cx) => (
                   <g key={`blossom-${cx}`} transform={`translate(${cx}, 168)`}>
-                    <circle r="7.5" fill="#E6B85C" fillOpacity="0.85" />
+                    <circle r="7.5" fill="#E6B85C" fillOpacity="0.88" />
                     <circle r="3.2" fill="#9B2C2C" />
                   </g>
                 ))}
@@ -386,16 +403,16 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
 
                       {isLit ? (
                         <g>
-                          <circle cx={candle.x} cy={candle.y - 22} r="24" fill="url(#candleGlow)" />
+                          <circle cx={candle.x} cy={candle.y - 22} r="28" fill="url(#candleGlow)" />
                           <path
                             className="flame-outer"
-                            d={`M${candle.x} ${candle.y - 38} C${candle.x + 8} ${candle.y - 26}, ${candle.x + 7} ${candle.y - 12}, ${candle.x} ${candle.y - 10} C${candle.x - 7} ${candle.y - 12}, ${candle.x - 8} ${candle.y - 26}, ${candle.x} ${candle.y - 38} Z`}
+                            d={`M${candle.x} ${candle.y - 40} C${candle.x + 8.5} ${candle.y - 27}, ${candle.x + 7.5} ${candle.y - 12}, ${candle.x} ${candle.y - 10} C${candle.x - 7.5} ${candle.y - 12}, ${candle.x - 8.5} ${candle.y - 27}, ${candle.x} ${candle.y - 40} Z`}
                             fill="#F59E0B"
                           />
                           <path
                             className="flame-inner"
-                            d={`M${candle.x} ${candle.y - 30} C${candle.x + 4} ${candle.y - 22}, ${candle.x + 4} ${candle.y - 14}, ${candle.x} ${candle.y - 12} C${candle.x - 4} ${candle.y - 14}, ${candle.x - 4} ${candle.y - 22}, ${candle.x} ${candle.y - 30} Z`}
-                            fill="#FFF6CC"
+                            d={`M${candle.x} ${candle.y - 31} C${candle.x + 4} ${candle.y - 22}, ${candle.x + 4} ${candle.y - 14}, ${candle.x} ${candle.y - 12} C${candle.x - 4} ${candle.y - 14}, ${candle.x - 4} ${candle.y - 22}, ${candle.x} ${candle.y - 31} Z`}
+                            fill="#FFF8D6"
                           />
                         </g>
                       ) : (
@@ -403,10 +420,10 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                           <path
                             key={`smoke-${candle.id}-${smokeCount}`}
                             className="candle-smoke"
-                            d={`M${candle.x} ${candle.y - 10} C${candle.x - 5} ${candle.y - 20}, ${candle.x + 6} ${candle.y - 28}, ${candle.x - 2} ${candle.y - 38}`}
+                            d={`M${candle.x} ${candle.y - 10} C${candle.x - 5} ${candle.y - 20}, ${candle.x + 6} ${candle.y - 28}, ${candle.x - 2} ${candle.y - 40}`}
                             fill="none"
-                            stroke="#D4C2B2"
-                            strokeWidth="2"
+                            stroke="#E8D8C8"
+                            strokeWidth="2.2"
                             strokeLinecap="round"
                           />
                         )
@@ -419,14 +436,14 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
 
             <div className="cake-progress-text cake-progress-dark" role="status" aria-live="polite">
               {remainingCount > 0
-                ? `Còn ${remainingCount} / 5 ngọn nến đang lung linh`
-                : 'Cả 5 ngọn nến đã tắt! Điều ước bình an đã gửi tới bầu trời'}
+                ? `Đang thắp sáng ${activeFlameCount} / 5 ngọn nến ước nguyện`
+                : 'Cả 5 ngọn nến đã tắt! Điều ước bình an đã sáng rực bầu trời'}
             </div>
 
             <div className="cake-controls">
               {remainingCount > 0 ? (
                 <>
-                  <button type="button" className="btn-primary" onClick={blowAllRemaining}>
+                  <button type="button" className="btn-primary vfx-glow-btn" onClick={blowAllRemaining}>
                     <Flame size={18} aria-hidden="true" />
                     <span>Thổi Tắt Tất Cả Nến</span>
                   </button>
@@ -442,7 +459,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                     ) : (
                       <Mic size={18} aria-hidden="true" />
                     )}
-                    <span>{micActive ? 'Tắt Micro' : 'Dùng Micro'}</span>
+                    <span>{micActive ? 'Tắt Micro' : 'Dùng Micro Để Thổi'}</span>
                   </button>
                 </>
               ) : (
@@ -469,7 +486,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
             {micMessage && <p className="mic-note-dark">{micMessage}</p>}
 
             {wishRevealed && (
-              <div className="wish-reveal-card" role="region" aria-live="polite">
+              <div className="wish-reveal-card vfx-foil-card" role="region" aria-live="polite">
                 <h3>
                   <Sparkles
                     size={20}

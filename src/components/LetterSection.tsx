@@ -1,28 +1,47 @@
-import { useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useMemo, useRef } from 'react';
+import { ChevronLeft, ChevronRight, Feather } from 'lucide-react';
 import { LETTER_CONTENT } from '../data/birthdayContent';
-import { useChapterScroll, useScrollProgressJump } from '../utils/useScrollStory';
-
-function clamp(v: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, v));
-}
+import {
+  clamp,
+  smoothstep,
+  useChapterScroll,
+  useScrollProgressJump,
+} from '../utils/useScrollStory';
 
 export function LetterSection() {
   const trackRef = useRef<HTMLElement | null>(null);
-  const { progress } = useChapterScroll(trackRef, 0.16);
+  const { progress } = useChapterScroll(trackRef, 0.15);
   const jumpToProgress = useScrollProgressJump(trackRef);
 
   const totalParagraphs = LETTER_CONTENT.paragraphs.length;
-  const unrollFactor = clamp(progress / 0.18, 0, 1);
-  const readingPos = clamp((progress - 0.12) / 0.68, 0, 0.999);
+  const unrollFactor = smoothstep(progress, 0.0, 0.16);
+  const readingPos = clamp((progress - 0.1) / 0.7, 0, 0.9999);
   const activeParaIndex = Math.min(totalParagraphs - 1, Math.floor(readingPos * totalParagraphs));
   const sealStamped = progress >= 0.8;
 
+  // Split each paragraph into words for continuous golden-ink scrubbing
+  const tokenizedParagraphs = useMemo(() => {
+    const wordsPerPara = LETTER_CONTENT.paragraphs.map((p) => p.split(' '));
+    const totalWords = wordsPerPara.reduce((acc, arr) => acc + arr.length, 0);
+    let globalCursor = 0;
+
+    return wordsPerPara.map((words) =>
+      words.map((word) => {
+        const ratio = globalCursor / Math.max(1, totalWords - 1);
+        globalCursor += 1;
+        return { word, ratio };
+      }),
+    );
+  }, []);
+
   const jumpParagraph = (idx: number) => {
     const safeIdx = clamp(idx, 0, totalParagraphs - 1);
-    const targetP = 0.14 + ((safeIdx + 0.5) / totalParagraphs) * 0.68;
+    const targetP = 0.12 + ((safeIdx + 0.5) / totalParagraphs) * 0.68;
     jumpToProgress(targetP);
   };
+
+  const rodSpinDeg = Math.round(progress * 540);
+  const inkPercent = Math.round(readingPos * 100);
 
   return (
     <section
@@ -34,26 +53,37 @@ export function LetterSection() {
       <div className="sticky-stage letter-sticky-stage">
         <div className="container letter-stage-inner">
           <div className="section-heading letter-compact-heading">
-            <div className="section-kicker">Chương 03 · Cuộn Thư Lụa</div>
+            <div className="section-kicker">
+              <Feather size={14} aria-hidden="true" />
+              <span>Bức Thư Cuộn Lụa Hoàng Kim</span>
+            </div>
             <h2 id="letter-heading" className="section-title">
-              Lá Thư Nhỏ Gửi Bà 20 Tháng 11
+              Tâm Tình Cháu Gửi Bà Ngày 20 Tháng 11
             </h2>
           </div>
 
           <div
             className="silk-scroll-frame"
             style={{
-              transform: `scaleY(${0.92 + unrollFactor * 0.08})`,
+              transform: `perspective(1200px) rotateX(${(1 - unrollFactor) * 10}deg) scaleY(${0.92 + unrollFactor * 0.08})`,
             }}
           >
-            {/* Top decorative scroll rod */}
+            {/* Top carved royal lacquer scroll roller */}
             <div className="scroll-rod scroll-rod-top" aria-hidden="true">
               <span className="scroll-rod-cap" />
-              <span className="scroll-rod-bar" />
+              <span
+                className="scroll-rod-bar"
+                style={{ backgroundPositionX: `${rodSpinDeg}px` }}
+              />
               <span className="scroll-rod-cap" />
             </div>
 
-            <article className="silk-scroll-paper">
+            <article className="silk-scroll-paper vfx-silk-sheen">
+              {/* Golden ink progress thread along top of parchment */}
+              <div className="ink-progress-rail" aria-hidden="true">
+                <div className="ink-progress-fill" style={{ width: `${inkPercent}%` }} />
+              </div>
+
               <div
                 className={`letter-seal-mark scroll-stamp ${sealStamped ? 'is-stamped' : ''}`}
                 aria-hidden="true"
@@ -64,26 +94,48 @@ export function LetterSection() {
 
               <h3 className="letter-salutation">{LETTER_CONTENT.salutation}</h3>
 
-              {/* Desktop shows all paragraphs with progressive highlight; Mobile shows focused reader window */}
+              {/* Desktop: True Word-by-Word Golden Ink Scrubbing */}
               <div className="letter-body-desktop">
-                {LETTER_CONTENT.paragraphs.map((paragraph, idx) => {
-                  const isActive = idx === activeParaIndex;
-                  const isRead = idx < activeParaIndex || sealStamped;
+                {tokenizedParagraphs.map((words, pIdx) => {
+                  const isActivePara = pIdx === activeParaIndex;
                   return (
                     <p
-                      key={idx}
-                      className={`letter-para ${isActive ? 'is-active' : ''} ${isRead ? 'is-read' : ''}`}
-                      onClick={() => jumpParagraph(idx)}
+                      key={pIdx}
+                      className={`letter-para-scrub ${isActivePara ? 'is-active' : ''}`}
+                      onClick={() => jumpParagraph(pIdx)}
                     >
-                      {paragraph}
+                      {words.map((item, wIdx) => {
+                        const delta = readingPos - item.ratio;
+                        const isWritten = delta >= -0.015 || sealStamped;
+                        const isBrushTip = Math.abs(delta) < 0.028 && !sealStamped;
+                        return (
+                          <span
+                            key={wIdx}
+                            className={`scrub-word ${isWritten ? 'is-written' : ''} ${isBrushTip ? 'is-brush-tip' : ''}`}
+                          >
+                            {item.word}{' '}
+                          </span>
+                        );
+                      })}
                     </p>
                   );
                 })}
               </div>
 
+              {/* Mobile: Focused Illuminated Reader with Word Scrubbing inside Active Paragraph */}
               <div className="letter-body-mobile">
                 <p key={activeParaIndex} className="letter-mobile-active-para">
-                  {LETTER_CONTENT.paragraphs[activeParaIndex]}
+                  {tokenizedParagraphs[activeParaIndex].map((item, wIdx) => {
+                    const isWritten = readingPos >= item.ratio - 0.04 || sealStamped;
+                    return (
+                      <span
+                        key={wIdx}
+                        className={`scrub-word ${isWritten ? 'is-written' : 'is-written'}`}
+                      >
+                        {item.word}{' '}
+                      </span>
+                    );
+                  })}
                 </p>
 
                 <div className="letter-mobile-pager">
@@ -117,10 +169,13 @@ export function LetterSection() {
               </footer>
             </article>
 
-            {/* Bottom decorative scroll rod */}
+            {/* Bottom carved royal lacquer scroll roller */}
             <div className="scroll-rod scroll-rod-bottom" aria-hidden="true">
               <span className="scroll-rod-cap" />
-              <span className="scroll-rod-bar" />
+              <span
+                className="scroll-rod-bar"
+                style={{ backgroundPositionX: `${-rodSpinDeg}px` }}
+              />
               <span className="scroll-rod-cap" />
             </div>
           </div>

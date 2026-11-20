@@ -10,13 +10,13 @@ export function FinaleSection({ onGrandCelebrate, onScrollToTop }: FinaleSection
   return (
     <section className="finale-section" aria-labelledby="finale-heading">
       <div className="container">
-        <div className="heirloom-card finale-medallion">
+        <div className="heirloom-card finale-medallion vfx-foil-card">
           <div className="finale-seal" aria-hidden="true">
-            20·11
+            <span>20·11</span>
           </div>
 
           <div className="section-kicker" style={{ marginBottom: '0.85rem' }}>
-            Lời Kết Kính Tặng Bà
+            Lời Thơ Kết Kính Dâng Bà
           </div>
           <h2 id="finale-heading" className="section-title" style={{ marginBottom: '1.15rem' }}>
             Mãi Khỏe Mạnh &amp; An Nhiên, Bà Nhé
@@ -29,9 +29,9 @@ export function FinaleSection({ onGrandCelebrate, onScrollToTop }: FinaleSection
           </blockquote>
 
           <div className="finale-actions">
-            <button type="button" className="btn-primary" onClick={onGrandCelebrate}>
+            <button type="button" className="btn-primary vfx-glow-btn" onClick={onGrandCelebrate}>
               <Sparkles size={18} aria-hidden="true" />
-              <span>Bắn Pháo Hoa Chúc Mừng</span>
+              <span>Bắn Đại Tiệc Pháo Hoa</span>
             </button>
 
             <button type="button" className="btn-secondary" onClick={onScrollToTop}>
