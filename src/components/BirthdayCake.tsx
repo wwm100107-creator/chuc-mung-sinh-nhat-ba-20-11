@@ -1,19 +1,87 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSiteContent } from '../context/ContentContext';
-import { playCandlePuff, playWishCelebration } from '../utils/musicBox';
-import { clamp, useChapterScroll, useScrollProgressJump } from '../utils/useScrollStory';
+import { playCakeStepChime, playWishCelebration } from '../utils/musicBox';
+import {
+  clamp,
+  remap,
+  smoothstep,
+  useChapterScroll,
+  useScrollProgressJump,
+} from '../utils/useScrollStory';
 
 interface BirthdayCakeProps {
   onGrandCelebrate: () => void;
 }
 
-const PAINTED_CANDLE_WICKS = [
-  { id: 0, x: 427, y: 248 },
-  { id: 1, x: 464, y: 243 },
-  { id: 2, x: 500, y: 253 },
-  { id: 3, x: 538, y: 248 },
-  { id: 4, x: 574, y: 248 },
+const CRAFT_STEPS = [
+  { id: 0, label: '01 · Đặt cốt bánh', targetP: 0.14 },
+  { id: 1, label: '02 · Phủ kem tầng dưới', targetP: 0.3 },
+  { id: 2, label: '03 · Chồng tầng & phủ kem', targetP: 0.5 },
+  { id: 3, label: '04 · Kết nơ & hoa cúc', targetP: 0.68 },
+  { id: 4, label: '05 · Cắm 5 cây nến', targetP: 0.79 },
+  { id: 5, label: '06 · Thắp lửa ước nguyện', targetP: 0.96 },
 ];
+
+const CANDLES = [
+  { id: 0, x: 224, baseY: 162, height: 58 },
+  { id: 1, x: 252, baseY: 159, height: 61 },
+  { id: 2, x: 280, baseY: 157, height: 63 },
+  { id: 3, x: 308, baseY: 159, height: 61 },
+  { id: 4, x: 336, baseY: 162, height: 58 },
+];
+
+const BOTTOM_PEARLS = [156, 184, 214, 244, 280, 316, 346, 376, 404];
+
+function easeOutBack(t: number): number {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
+/**
+ * Generates an animated SVG path for thick, viscous cream frosting slowly dripping down a cylinder cake tier.
+ */
+function buildFlowingCreamPath(
+  leftX: number,
+  rightX: number,
+  topY: number,
+  ellipseRy: number,
+  dripHeights: number[],
+  pourP: number,
+): string {
+  const width = rightX - leftX;
+  const n = dripHeights.length;
+  const segW = width / n;
+
+  // Phase A (0 -> 0.35): cream cap spreads across top; Phase B (0.18 -> 1): individual drips slowly ooze down
+  const dripFlow = smoothstep(pourP, 0.15, 1.0);
+  const baseApron = 10 * smoothstep(pourP, 0.05, 0.45);
+
+  let d = `M ${leftX} ${topY}`;
+  // Top back arc of the cream cap
+  d += ` A ${width / 2} ${ellipseRy} 0 0 1 ${rightX} ${topY}`;
+  d += ` L ${rightX} ${(topY + baseApron).toFixed(1)}`;
+
+  // Scalloped viscous drips from right to left along the front wall
+  for (let i = n - 1; i >= 0; i -= 1) {
+    const xRight = leftX + (i + 1) * segW;
+    const xMid = leftX + (i + 0.5) * segW;
+    const xLeft = leftX + i * segW;
+
+    // Stagger each drip slightly so they flow down organically at different rates
+    const staggerDelay = (i % 3) * 0.11;
+    const localDripP = smoothstep(dripFlow, staggerDelay, Math.min(1, staggerDelay + 0.78));
+    const dripLen = baseApron + dripHeights[i] * localDripP;
+    const valleyY = topY + baseApron + 4 * localDripP;
+    const tipY = topY + dripLen;
+
+    d += ` C ${(xRight - segW * 0.18).toFixed(1)} ${valleyY.toFixed(1)}, ${(xMid + segW * 0.24).toFixed(1)} ${tipY.toFixed(1)}, ${xMid.toFixed(1)} ${tipY.toFixed(1)}`;
+    d += ` C ${(xMid - segW * 0.24).toFixed(1)} ${tipY.toFixed(1)}, ${(xLeft + segW * 0.18).toFixed(1)} ${valleyY.toFixed(1)}, ${xLeft.toFixed(1)} ${valleyY.toFixed(1)}`;
+  }
+
+  d += ` L ${leftX} ${topY} Z`;
+  return d;
+}
 
 export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
   const trackRef = useRef<HTMLElement | null>(null);
@@ -21,170 +89,239 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
   const jumpToProgress = useScrollProgressJump(trackRef);
   const { content } = useSiteContent();
 
-  const [litCandles, setLitCandles] = useState<boolean[]>([true, true, true, true, true]);
-  const [smokeTick, setSmokeTick] = useState<number[]>([0, 0, 0, 0, 0]);
-  const [wishRevealed, setWishRevealed] = useState(false);
-  const [micActive, setMicActive] = useState(false);
-  const [micLevel, setMicLevel] = useState(0);
-  const [micMessage, setMicMessage] = useState<string | null>(null);
-
-  const litRef = useRef<boolean[]>(litCandles);
-  litRef.current = litCandles;
-
-  const micStreamRef = useRef<MediaStream | null>(null);
-  const micCtxRef = useRef<AudioContext | null>(null);
-  const micRafRef = useRef<number | null>(null);
-  const lastBlowTimeRef = useRef(0);
+  // Auto-play state so user can also watch the full cake assembly with 1 tap
+  const [autoPlayP, setAutoPlayP] = useState<number | null>(null);
+  const autoRafRef = useRef<number | null>(null);
+  const lastStepChimeRef = useRef<number>(-1);
   const celebrationFiredRef = useRef(false);
-  const scrollAutoBlowTriggeredRef = useRef(false);
 
-  const remainingCount = litCandles.filter(Boolean).length;
-  const awakeCount = progress < 0.02 ? 1 : Math.min(5, Math.ceil((progress / 0.22) * 5));
-  const activeFlameCount = litCandles.filter((lit, idx) => lit && idx < awakeCount).length;
+  const t = autoPlayP !== null ? autoPlayP : progress;
 
-  const stopMicListener = () => {
-    if (micRafRef.current !== null) {
-      window.cancelAnimationFrame(micRafRef.current);
-      micRafRef.current = null;
+  // Determine current active step [0..5]
+  const activeStepIndex =
+    t < 0.16 ? 0 : t < 0.33 ? 1 : t < 0.52 ? 2 : t < 0.71 ? 3 : t < 0.82 ? 4 : 5;
+
+  useEffect(() => {
+    if (activeStepIndex > lastStepChimeRef.current && t > 0.04) {
+      lastStepChimeRef.current = activeStepIndex;
+      playCakeStepChime(activeStepIndex);
+    } else if (t < 0.03) {
+      lastStepChimeRef.current = -1;
+      celebrationFiredRef.current = false;
     }
-    if (micStreamRef.current) {
-      micStreamRef.current.getTracks().forEach((track) => track.stop());
-      micStreamRef.current = null;
+  }, [activeStepIndex, t]);
+
+  useEffect(() => {
+    if (t >= 0.92 && !celebrationFiredRef.current) {
+      celebrationFiredRef.current = true;
+      playWishCelebration();
+      onGrandCelebrate();
     }
-    if (micCtxRef.current) {
-      void micCtxRef.current.close();
-      micCtxRef.current = null;
-    }
-    setMicActive(false);
-    setMicLevel(0);
-  };
+  }, [t, onGrandCelebrate]);
 
   useEffect(() => {
     return () => {
-      stopMicListener();
+      if (autoRafRef.current !== null) {
+        window.cancelAnimationFrame(autoRafRef.current);
+      }
     };
   }, []);
 
-  const extinguishCandle = (index: number) => {
-    if (!litRef.current[index]) return;
-    playCandlePuff();
-    setLitCandles((prev) => prev.map((v, idx) => (idx === index ? false : v)));
-    setSmokeTick((prev) => prev.map((v, idx) => (idx === index ? v + 1 : v)));
-  };
-
-  const extinguishNextLit = () => {
-    const nextIdx = litRef.current.findIndex(Boolean);
-    if (nextIdx !== -1) {
-      extinguishCandle(nextIdx);
+  const handlePlayFullAnimation = () => {
+    if (autoRafRef.current !== null) {
+      window.cancelAnimationFrame(autoRafRef.current);
     }
-  };
-
-  const blowAllRemaining = () => {
-    const indices = litRef.current
-      .map((isLit, idx) => (isLit ? idx : -1))
-      .filter((idx) => idx >= 0);
-
-    indices.forEach((candleIdx, step) => {
-      window.setTimeout(() => {
-        extinguishCandle(candleIdx);
-      }, step * 120);
-    });
-  };
-
-  useEffect(() => {
-    if (progress >= 0.86 && remainingCount > 0 && !scrollAutoBlowTriggeredRef.current) {
-      scrollAutoBlowTriggeredRef.current = true;
-      blowAllRemaining();
-    }
-  }, [progress, remainingCount]);
-
-  useEffect(() => {
-    if (remainingCount === 0 && !celebrationFiredRef.current) {
-      celebrationFiredRef.current = true;
-      setWishRevealed(true);
-      playWishCelebration();
-      onGrandCelebrate();
-      stopMicListener();
-    }
-  }, [remainingCount, onGrandCelebrate]);
-
-  const relightCandles = () => {
+    lastStepChimeRef.current = -1;
     celebrationFiredRef.current = false;
-    scrollAutoBlowTriggeredRef.current = true;
-    setWishRevealed(false);
-    setLitCandles([true, true, true, true, true]);
-    setMicMessage(null);
-    jumpToProgress(0.42);
-  };
+    setAutoPlayP(0.01);
 
-  const toggleMicrophone = async () => {
-    if (micActive) {
-      stopMicListener();
-      return;
-    }
+    const startTime = performance.now();
+    const durationMs = 6800;
 
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setMicMessage('Trình duyệt này chưa hỗ trợ micro — Bà cứ bấm nút "Thổi Tắt Tất Cả Nến" nhé ạ.');
-      return;
-    }
-
-    try {
-      setMicMessage(null);
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micStreamRef.current = stream;
-
-      const AudioCtor =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtor) {
-        setMicMessage('Thiết bị không hỗ trợ xử lý âm thanh — Bà bấm trực tiếp lên ngọn nến nhé ạ.');
-        stopMicListener();
-        return;
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const ratio = clamp(elapsed / durationMs, 0, 1);
+      setAutoPlayP(ratio);
+      if (ratio < 1) {
+        autoRafRef.current = window.requestAnimationFrame(step);
+      } else {
+        autoRafRef.current = null;
+        // Sync scroll position to end of track so resuming scroll doesn't snap back
+        jumpToProgress(0.96);
+        window.setTimeout(() => {
+          setAutoPlayP(null);
+        }, 450);
       }
+    };
 
-      const ctx = new AudioCtor();
-      micCtxRef.current = ctx;
-      const source = ctx.createMediaStreamSource(stream);
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-
-      const data = new Uint8Array(analyser.frequencyBinCount);
-      setMicActive(true);
-
-      const detectBlow = () => {
-        if (!micStreamRef.current) return;
-        analyser.getByteTimeDomainData(data);
-        let sumSq = 0;
-        for (let i = 0; i < data.length; i += 1) {
-          const norm = (data[i] - 128) / 128;
-          sumSq += norm * norm;
-        }
-        const rms = Math.sqrt(sumSq / data.length);
-        const levelPct = Math.min(100, Math.round(rms * 380));
-        setMicLevel(levelPct);
-
-        const now = performance.now();
-        if (rms > 0.13 && now - lastBlowTimeRef.current > 240) {
-          lastBlowTimeRef.current = now;
-          extinguishNextLit();
-        }
-
-        micRafRef.current = window.requestAnimationFrame(detectBlow);
-      };
-
-      micRafRef.current = window.requestAnimationFrame(detectBlow);
-    } catch {
-      setMicMessage(
-        'Chưa cấp quyền micro — không sao cả, Bà chạm vào từng ngọn nến hoặc bấm nút bên dưới nhé ạ.',
-      );
-      stopMicListener();
-    }
+    autoRafRef.current = window.requestAnimationFrame(step);
   };
 
+  const handleSelectStep = (targetP: number) => {
+    if (autoRafRef.current !== null) {
+      window.cancelAnimationFrame(autoRafRef.current);
+      autoRafRef.current = null;
+    }
+    setAutoPlayP(null);
+    jumpToProgress(targetP);
+  };
+
+  // =====================================================
+  // LAYER-BY-LAYER ANIMATION TIMELINE PARAMETERS [0..1]
+  // =====================================================
+  // 1. Celadon Cake Stand (0.00 -> 0.09)
+  const standP = smoothstep(t, 0.0, 0.09);
+  const standY = (1 - standP) * 65;
+
+  // 2. Bottom Sponge Cake Layer (0.05 -> 0.17)
+  const sponge1P = smoothstep(t, 0.05, 0.17);
+  const sponge1DropY = (1 - sponge1P) * -145;
+  const sponge1Bounce =
+    sponge1P > 0.75 ? Math.sin(((sponge1P - 0.75) / 0.25) * Math.PI) * 0.055 : 0;
+
+  // 3. Bottom Flowing Cream Frosting (0.16 -> 0.34)
+  const cream1P = smoothstep(t, 0.16, 0.34);
+  const cream1StreamOpacity =
+    t >= 0.15 && t <= 0.28 ? Math.sin(remap(t, 0.15, 0.28) * Math.PI) : 0;
+  const bottomCreamPath = buildFlowingCreamPath(
+    136,
+    424,
+    254,
+    20,
+    [24, 44, 28, 56, 32, 48, 26, 42, 22],
+    cream1P,
+  );
+
+  // 4. Top Sponge Cake Layer (0.31 -> 0.43)
+  const sponge2P = smoothstep(t, 0.31, 0.43);
+  const sponge2DropY = (1 - sponge2P) * -135;
+  const sponge2Bounce =
+    sponge2P > 0.75 ? Math.sin(((sponge2P - 0.75) / 0.25) * Math.PI) * 0.055 : 0;
+
+  // 5. Top Flowing Cream Frosting (0.41 -> 0.55)
+  const cream2P = smoothstep(t, 0.41, 0.55);
+  const cream2StreamOpacity =
+    t >= 0.4 && t <= 0.51 ? Math.sin(remap(t, 0.4, 0.51) * Math.PI) : 0;
+  const topCreamPath = buildFlowingCreamPath(
+    176,
+    384,
+    162,
+    15,
+    [20, 38, 24, 46, 28, 36, 20],
+    cream2P,
+  );
+
+  // 6. Rose Silk Ribbon & Bow (0.53 -> 0.62)
+  const ribbonWrapP = smoothstep(t, 0.53, 0.59);
+  const bowPopP = easeOutBack(smoothstep(t, 0.57, 0.64));
+
+  // 7. Botanical Chrysanthemums, Daisies, Leaves & Sugar Pearls (0.58 -> 0.73)
+  const flowerLeftP = easeOutBack(smoothstep(t, 0.58, 0.67));
+  const flowerRightP = easeOutBack(smoothstep(t, 0.61, 0.7));
+  const flowerBaseP = easeOutBack(smoothstep(t, 0.64, 0.73));
+  const pearlsP = smoothstep(t, 0.65, 0.73);
+
+  // 8. 5 Beeswax Candles Planting (0.70 -> 0.82)
+  // 9. Igniting 5 Living Fire VFX Flames (0.81 -> 0.95)
+  const fireMasterP = smoothstep(t, 0.81, 0.95);
+  const allLit = fireMasterP >= 0.92;
+
+  // Wand spark position sweeping across the 5 wicks during ignition
+  const wandActive = fireMasterP > 0.01 && fireMasterP < 0.96;
+  const wandX = 216 + fireMasterP * 132;
+  const wandY = 92 - Math.sin(fireMasterP * Math.PI * 5) * 10;
+
+  // Chapter transition
   const sceneOpacity = clamp(enterProgress * 1.15 - exitProgress * 0.7, 0, 1).toFixed(3);
   const sceneY = ((1 - enterProgress) * 48 - exitProgress * 38).toFixed(1);
   const sceneScale = (0.93 + enterProgress * 0.07 - exitProgress * 0.05).toFixed(3);
+
+  const renderChrysanthemumCluster = (
+    cx: number,
+    cy: number,
+    scaleVal: number,
+    flipX = false,
+  ) => {
+    if (scaleVal <= 0.01) return null;
+    const sx = flipX ? -scaleVal : scaleVal;
+    return (
+      <g transform={`translate(${cx} ${cy}) scale(${sx.toFixed(3)} ${scaleVal.toFixed(3)})`}>
+        {/* Sage-green watercolor leaves behind blossom */}
+        <path
+          d="M -8 4 C -28 -10, -44 -26, -48 -44 C -30 -40, -14 -22, -4 -4 Z"
+          fill="#88A785"
+          stroke="#4F664D"
+          strokeWidth="1.3"
+        />
+        <path
+          d="M -12 8 C -36 4, -52 -6, -60 -20 C -40 -22, -24 -10, -8 2 Z"
+          fill="#9BB898"
+          stroke="#4F664D"
+          strokeWidth="1.2"
+        />
+        <path
+          d="M 10 -4 C 26 -20, 38 -36, 42 -50 C 24 -44, 12 -26, 2 -8 Z"
+          fill="#88A785"
+          stroke="#4F664D"
+          strokeWidth="1.2"
+        />
+
+        {/* Outer ring of 12 golden chrysanthemum petals */}
+        {Array.from({ length: 12 }).map((_, i) => (
+          <g key={`o-${i}`} transform={`rotate(${i * 30})`}>
+            <path
+              d="M 0 -4 C 7 -14, 7 -28, 0 -34 C -7 -28, -7 -14, 0 -4 Z"
+              fill="#E59E34"
+              stroke="#6B421B"
+              strokeWidth="1.1"
+            />
+          </g>
+        ))}
+
+        {/* Inner ring of 12 warm amber petals */}
+        {Array.from({ length: 12 }).map((_, i) => (
+          <g key={`m-${i}`} transform={`rotate(${i * 30 + 15})`}>
+            <path
+              d="M 0 -3 C 5.5 -10, 5.5 -21, 0 -25 C -5.5 -21, -5.5 -10, 0 -3 Z"
+              fill="#F4C158"
+              stroke="#6B421B"
+              strokeWidth="1"
+            />
+          </g>
+        ))}
+
+        {/* Core golden bud */}
+        <circle cx="0" cy="0" r="7" fill="#D98624" stroke="#6B421B" strokeWidth="1.1" />
+        <circle cx="0" cy="0" r="3.5" fill="#FCE08B" />
+
+        {/* Two delicate white cúc họa mi daisies beside the chrysanthemum */}
+        {[
+          { dx: 28, dy: 8, r: 0.75 },
+          { dx: -26, dy: -22, r: 0.65 },
+        ].map((d, dIdx) => (
+          <g
+            key={`daisy-${dIdx}`}
+            transform={`translate(${d.dx} ${d.dy}) scale(${d.r})`}
+          >
+            {Array.from({ length: 8 }).map((__, pIdx) => (
+              <ellipse
+                key={pIdx}
+                cx="9"
+                cy="0"
+                rx="6.5"
+                ry="3"
+                transform={`rotate(${pIdx * 45})`}
+                fill="#FFFDF8"
+                stroke="#6E533F"
+                strokeWidth="1"
+              />
+            ))}
+            <circle cx="0" cy="0" r="4.5" fill="#E8A838" stroke="#6B421B" strokeWidth="1" />
+          </g>
+        ))}
+      </g>
+    );
+  };
 
   return (
     <section
@@ -204,7 +341,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
           className="vfx-ambient-halo"
           aria-hidden="true"
           style={{
-            transform: `translate(-50%, -45%) scale(${0.85 + (activeFlameCount / 5) * 0.4})`,
+            transform: `translate(-50%, -45%) scale(${0.85 + fireMasterP * 0.48})`,
           }}
         />
 
@@ -218,147 +355,558 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
           </div>
 
           <div
-            className={`storybook-sheet cake-watercolor-card ${wishRevealed ? 'is-wish-revealed' : ''}`}
+            className={`storybook-sheet cake-watercolor-card ${allLit ? 'is-wish-revealed' : ''}`}
           >
-            <div className="watercolor-cake-painting-box vfx-levitate" onClick={extinguishNextLit}>
-              <img
-                src="/images/watercolor-cake.png"
-                alt="Tranh màu nước bánh sinh nhật hai tầng trang trí hoa cúc vàng, nơ lụa hồng và năm ngọn nến sáp ong"
-                className="watercolor-cake-img watercolor-cutout-img"
-                width={480}
-                height={480}
-                loading="lazy"
-                decoding="async"
-              />
-
+            {/* Step-by-Step Animated Watercolor Cake & Fire VFX Stage */}
+            <div className="animated-cake-stage-box">
               <svg
-                viewBox="0 0 1000 1000"
-                className="watercolor-flames-overlay"
-                aria-label="Năm ngọn nến tương tác trên bánh sinh nhật"
+                viewBox="0 0 560 450"
+                className="animated-cake-svg"
+                role="img"
+                aria-label="Hoạt ảnh tạo chiếc bánh kem sinh nhật hai tầng phủ kem chảy, kết hoa cúc vàng và thắp sáng năm ngọn nến"
               >
                 <defs>
-                  <radialGradient id="watercolorFlameHalo" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#FCE08B" stopOpacity="0.88" />
-                    <stop offset="55%" stopColor="#E8A23A" stopOpacity="0.32" />
-                    <stop offset="100%" stopColor="#E8A23A" stopOpacity="0" />
+                  {/* Watercolor & Fire VFX Gradients */}
+                  <linearGradient id="celadonPlateTop" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#D6E6D3" />
+                    <stop offset="55%" stopColor="#A5C0A2" />
+                    <stop offset="100%" stopColor="#7C9A7A" />
+                  </linearGradient>
+                  <linearGradient id="celadonPedestal" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#7F9D7D" />
+                    <stop offset="45%" stopColor="#BDD3BA" />
+                    <stop offset="100%" stopColor="#6D8B6B" />
+                  </linearGradient>
+                  <linearGradient id="spongeBody" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#E6BA6C" />
+                    <stop offset="38%" stopColor="#F7DC9E" />
+                    <stop offset="72%" stopColor="#F2CE85" />
+                    <stop offset="100%" stopColor="#D9A856" />
+                  </linearGradient>
+                  <linearGradient id="spongeTopSurface" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#FBE7B8" />
+                    <stop offset="100%" stopColor="#E9C276" />
+                  </linearGradient>
+                  <linearGradient id="velvetCream" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#FFFDF9" />
+                    <stop offset="65%" stopColor="#FBF2E1" />
+                    <stop offset="100%" stopColor="#EFE0C4" />
+                  </linearGradient>
+                  <linearGradient id="roseSilk" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#A64643" />
+                    <stop offset="50%" stopColor="#D47470" />
+                    <stop offset="100%" stopColor="#9B3E3B" />
+                  </linearGradient>
+                  <linearGradient id="beeswaxCandle" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#D49234" />
+                    <stop offset="45%" stopColor="#FCE092" />
+                    <stop offset="100%" stopColor="#BC7B22" />
+                  </linearGradient>
+
+                  {/* Multi-Layer Living Fire VFX Gradients */}
+                  <radialGradient id="fireThermalAura" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#FFF3B8" stopOpacity="0.92" />
+                    <stop offset="40%" stopColor="#F59E0B" stopOpacity="0.45" />
+                    <stop offset="75%" stopColor="#D9481E" stopOpacity="0.14" />
+                    <stop offset="100%" stopColor="#D9481E" stopOpacity="0" />
                   </radialGradient>
+                  <linearGradient id="fireOuterTongue" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stopColor="#EA580C" />
+                    <stop offset="55%" stopColor="#F59E0B" />
+                    <stop offset="100%" stopColor="#FDE047" />
+                  </linearGradient>
+                  <linearGradient id="fireInnerCore" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.75" />
+                    <stop offset="30%" stopColor="#FFFDF7" />
+                    <stop offset="100%" stopColor="#FEF08A" />
+                  </linearGradient>
                 </defs>
 
-                {PAINTED_CANDLE_WICKS.map((wick, idx) => {
-                  const isLit = litCandles[idx] && idx < awakeCount;
-                  const smokeCount = smokeTick[idx];
-                  return (
-                    <g
-                      key={wick.id}
-                      className="candle-hit"
-                      role="button"
-                      tabIndex={0}
-                      aria-label={
-                        litCandles[idx]
-                          ? `Ngọn nến số ${idx + 1} đang cháy — chạm để thổi tắt`
-                          : `Ngọn nến số ${idx + 1} đã thổi tắt`
-                      }
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        extinguishCandle(idx);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          extinguishCandle(idx);
-                        }
-                      }}
-                    >
-                      <rect
-                        x={wick.x - 28}
-                        y={wick.y - 90}
-                        width="56"
-                        height="240"
-                        fill="transparent"
-                      />
+                {/* =========================================================
+                    STEP 1A: CELADON JADE CERAMIC CAKE STAND
+                   ========================================================= */}
+                <g
+                  style={{
+                    opacity: standP,
+                    transform: `translate(0px, ${standY.toFixed(1)}px)`,
+                  }}
+                >
+                  {/* Soft table shadow */}
+                  <ellipse cx="280" cy="426" rx="95" ry="12" fill="rgba(90, 62, 38, 0.14)" />
+                  {/* Pedestal base & stem */}
+                  <path
+                    d="M 248 344 C 254 374, 240 402, 214 416 C 214 426, 346 426, 346 416 C 320 402, 306 374, 312 344 Z"
+                    fill="url(#celadonPedestal)"
+                    stroke="#523A28"
+                    strokeWidth="1.6"
+                  />
+                  <ellipse
+                    cx="280"
+                    cy="417"
+                    rx="66"
+                    ry="9"
+                    fill="none"
+                    stroke="#523A28"
+                    strokeWidth="1.3"
+                  />
+                  {/* Plate rim */}
+                  <ellipse
+                    cx="280"
+                    cy="342"
+                    rx="184"
+                    ry="28"
+                    fill="#7D9B7B"
+                    stroke="#523A28"
+                    strokeWidth="1.6"
+                  />
+                  <ellipse
+                    cx="280"
+                    cy="337"
+                    rx="182"
+                    ry="26"
+                    fill="url(#celadonPlateTop)"
+                    stroke="#523A28"
+                    strokeWidth="1.5"
+                  />
+                  <ellipse
+                    cx="280"
+                    cy="337"
+                    rx="162"
+                    ry="20"
+                    fill="none"
+                    stroke="#5A7458"
+                    strokeWidth="1"
+                    strokeOpacity="0.55"
+                  />
+                </g>
 
-                      {isLit ? (
-                        <g>
+                {/* =========================================================
+                    STEP 1B: BOTTOM SPONGE CAKE TIER DROPPING & STACKING
+                   ========================================================= */}
+                {sponge1P > 0.01 && (
+                  <g
+                    style={{
+                      opacity: clamp(sponge1P * 1.35, 0, 1),
+                      transform: `translate(280px, ${(334 + sponge1DropY).toFixed(1)}px) scale(${(1 + sponge1Bounce).toFixed(3)}, ${(1 - sponge1Bounce).toFixed(3)}) translate(-280px, -334px)`,
+                    }}
+                  >
+                    {/* Bottom tier cylinder wall */}
+                    <path
+                      d="M 136 254 L 136 330 A 144 20 0 0 0 424 330 L 424 254 Z"
+                      fill="url(#spongeBody)"
+                      stroke="#5C3D28"
+                      strokeWidth="1.6"
+                    />
+                    {/* Sponge cake horizontal layer seam */}
+                    <path
+                      d="M 136 292 A 144 19 0 0 0 424 292"
+                      fill="none"
+                      stroke="#B88238"
+                      strokeWidth="2.2"
+                      strokeDasharray="6 4"
+                      strokeOpacity="0.65"
+                    />
+                    {/* Bottom tier top surface */}
+                    <ellipse
+                      cx="280"
+                      cy="254"
+                      rx="144"
+                      ry="20"
+                      fill="url(#spongeTopSurface)"
+                      stroke="#5C3D28"
+                      strokeWidth="1.5"
+                    />
+                  </g>
+                )}
+
+                {/* =========================================================
+                    STEP 2: BOTTOM TIER CREAM FROSTING POURING & DRIPPING DOWN
+                   ========================================================= */}
+                {cream1StreamOpacity > 0.01 && (
+                  <path
+                    d="M 280 110 L 280 254"
+                    stroke="#FFFDF9"
+                    strokeWidth={14 * cream1StreamOpacity}
+                    strokeLinecap="round"
+                    opacity={cream1StreamOpacity}
+                  />
+                )}
+                {cream1P > 0.01 && (
+                  <g style={{ opacity: clamp(cream1P * 1.4, 0, 1) }}>
+                    <path
+                      d={bottomCreamPath}
+                      fill="url(#velvetCream)"
+                      stroke="#6A4B35"
+                      strokeWidth="1.5"
+                      strokeLinejoin="round"
+                    />
+                    <ellipse
+                      cx="280"
+                      cy="254"
+                      rx={144 * clamp(cream1P * 1.3, 0.2, 1)}
+                      ry={20 * clamp(cream1P * 1.3, 0.2, 1)}
+                      fill="#FFFDF9"
+                      stroke="#D8C3A5"
+                      strokeWidth="1"
+                    />
+                  </g>
+                )}
+
+                {/* =========================================================
+                    STEP 4A: ROSE-CRIMSON SILK RIBBON AROUND BOTTOM TIER
+                   ========================================================= */}
+                {ribbonWrapP > 0.01 && (
+                  <g
+                    style={{
+                      opacity: clamp(ribbonWrapP * 1.3, 0, 1),
+                      transform: `translate(280px, 310px) scale(${ribbonWrapP.toFixed(3)}, 1) translate(-280px, -310px)`,
+                    }}
+                  >
+                    <path
+                      d="M 136 300 A 144 20 0 0 0 424 300 L 424 313 A 144 20 0 0 1 136 313 Z"
+                      fill="url(#roseSilk)"
+                      stroke="#5E2220"
+                      strokeWidth="1.3"
+                    />
+                  </g>
+                )}
+
+                {/* =========================================================
+                    STEP 3A: TOP SPONGE CAKE TIER DROPPING & STACKING
+                   ========================================================= */}
+                {sponge2P > 0.01 && (
+                  <g
+                    style={{
+                      opacity: clamp(sponge2P * 1.35, 0, 1),
+                      transform: `translate(280px, ${(248 + sponge2DropY).toFixed(1)}px) scale(${(1 + sponge2Bounce).toFixed(3)}, ${(1 - sponge2Bounce).toFixed(3)}) translate(-280px, -248px)`,
+                    }}
+                  >
+                    <ellipse
+                      cx="280"
+                      cy="250"
+                      rx="108"
+                      ry="15"
+                      fill="rgba(90, 56, 28, 0.14)"
+                    />
+                    <path
+                      d="M 176 162 L 176 246 A 104 15 0 0 0 384 246 L 384 162 Z"
+                      fill="url(#spongeBody)"
+                      stroke="#5C3D28"
+                      strokeWidth="1.6"
+                    />
+                    <path
+                      d="M 176 204 A 104 14 0 0 0 384 204"
+                      fill="none"
+                      stroke="#B88238"
+                      strokeWidth="2"
+                      strokeDasharray="6 4"
+                      strokeOpacity="0.6"
+                    />
+                    <ellipse
+                      cx="280"
+                      cy="162"
+                      rx="104"
+                      ry="15"
+                      fill="url(#spongeTopSurface)"
+                      stroke="#5C3D28"
+                      strokeWidth="1.5"
+                    />
+                  </g>
+                )}
+
+                {/* =========================================================
+                    STEP 3B: TOP TIER CREAM FROSTING POURING & DRIPPING DOWN
+                   ========================================================= */}
+                {cream2StreamOpacity > 0.01 && (
+                  <path
+                    d="M 280 45 L 280 162"
+                    stroke="#FFFDF9"
+                    strokeWidth={12 * cream2StreamOpacity}
+                    strokeLinecap="round"
+                    opacity={cream2StreamOpacity}
+                  />
+                )}
+                {cream2P > 0.01 && (
+                  <g style={{ opacity: clamp(cream2P * 1.4, 0, 1) }}>
+                    <path
+                      d={topCreamPath}
+                      fill="url(#velvetCream)"
+                      stroke="#6A4B35"
+                      strokeWidth="1.5"
+                      strokeLinejoin="round"
+                    />
+                    <ellipse
+                      cx="280"
+                      cy="162"
+                      rx={104 * clamp(cream2P * 1.3, 0.2, 1)}
+                      ry={15 * clamp(cream2P * 1.3, 0.2, 1)}
+                      fill="#FFFDF9"
+                      stroke="#D8C3A5"
+                      strokeWidth="1"
+                    />
+                  </g>
+                )}
+
+                {/* =========================================================
+                    STEP 4B: SILK BOW, CHRYSANTHEMUMS, DAISIES & SUGAR PEARLS
+                   ========================================================= */}
+                {/* Golden sugar pearls along tier base */}
+                {pearlsP > 0.01 &&
+                  BOTTOM_PEARLS.map((px, idx) => {
+                    const localP = easeOutBack(
+                      smoothstep(pearlsP, idx * 0.06, Math.min(1, idx * 0.06 + 0.45)),
+                    );
+                    const py = 247 + Math.sin((idx / (BOTTOM_PEARLS.length - 1)) * Math.PI) * 11;
+                    return (
+                      <circle
+                        key={`pearl-${px}`}
+                        cx={px}
+                        cy={py}
+                        r={4.2 * Math.max(0, localP)}
+                        fill="#F4C158"
+                        stroke="#6B421B"
+                        strokeWidth="1"
+                      />
+                    );
+                  })}
+
+                {/* Center Rose-Crimson Silk Bow */}
+                {bowPopP > 0.01 && (
+                  <g
+                    transform={`translate(280 318) scale(${Math.max(0, bowPopP).toFixed(3)})`}
+                  >
+                    {/* Flowing ribbon tails */}
+                    <path
+                      d="M -6 4 C -18 24, -26 46, -34 66 L -18 62 C -12 44, -6 24, 0 6 Z"
+                      fill="url(#roseSilk)"
+                      stroke="#5E2220"
+                      strokeWidth="1.3"
+                    />
+                    <path
+                      d="M 6 4 C 18 24, 24 48, 30 70 L 14 64 C 10 46, 4 24, 0 6 Z"
+                      fill="url(#roseSilk)"
+                      stroke="#5E2220"
+                      strokeWidth="1.3"
+                    />
+                    {/* Left & Right Bow Loops */}
+                    <path
+                      d="M -4 0 C -26 -18, -54 -14, -52 4 C -50 18, -22 14, -4 2 Z"
+                      fill="url(#roseSilk)"
+                      stroke="#5E2220"
+                      strokeWidth="1.4"
+                    />
+                    <path
+                      d="M 4 0 C 26 -18, 54 -14, 52 4 C 50 18, 22 14, 4 2 Z"
+                      fill="url(#roseSilk)"
+                      stroke="#5E2220"
+                      strokeWidth="1.4"
+                    />
+                    {/* Center Bow Knot */}
+                    <rect
+                      x="-7"
+                      y="-6"
+                      width="14"
+                      height="13"
+                      rx="4"
+                      fill="#B84B47"
+                      stroke="#5E2220"
+                      strokeWidth="1.4"
+                    />
+                  </g>
+                )}
+
+                {/* 3 Hand-Painted Watercolor Chrysanthemum & Daisy Clusters */}
+                {renderChrysanthemumCluster(198, 244, flowerLeftP * 0.92, false)}
+                {renderChrysanthemumCluster(362, 242, flowerRightP * 0.95, true)}
+                {renderChrysanthemumCluster(170, 326, flowerBaseP * 0.78, false)}
+
+                {/* =========================================================
+                    STEP 5: 5 SLENDER BEESWAX CANDLES DESCENDING ONTO CAKE
+                   ========================================================= */}
+                {CANDLES.map((c, idx) => {
+                  const candleStart = 0.7 + idx * 0.018;
+                  const candleP = smoothstep(t, candleStart, candleStart + 0.08);
+                  if (candleP <= 0.01) return null;
+
+                  const dropY = (1 - easeOutBack(candleP)) * -85;
+                  const topY = c.baseY - c.height;
+
+                  // Step 6: Ignition progress for this specific candle
+                  const wickIgniteP = smoothstep(
+                    fireMasterP,
+                    idx * 0.14,
+                    Math.min(1, idx * 0.14 + 0.34),
+                  );
+
+                  return (
+                    <g key={c.id}>
+                      <g
+                        style={{
+                          opacity: clamp(candleP * 1.4, 0, 1),
+                          transform: `translate(0px, ${dropY.toFixed(1)}px)`,
+                        }}
+                      >
+                        {/* Frosting base shadow */}
+                        <ellipse
+                          cx={c.x}
+                          cy={c.baseY + 2}
+                          rx="8"
+                          ry="3"
+                          fill="rgba(110, 78, 42, 0.22)"
+                        />
+                        {/* Beeswax candle shaft */}
+                        <rect
+                          x={c.x - 5.5}
+                          y={topY}
+                          width="11"
+                          height={c.height}
+                          rx="3"
+                          fill="url(#beeswaxCandle)"
+                          stroke="#5C3D28"
+                          strokeWidth="1.3"
+                        />
+                        {/* Subtle spiral wax stripe */}
+                        <path
+                          d={`M ${c.x - 5.5} ${topY + 18} L ${c.x + 5.5} ${topY + 11} M ${c.x - 5.5} ${topY + 38} L ${c.x + 5.5} ${topY + 31}`}
+                          stroke="#FFF6DC"
+                          strokeWidth="1.5"
+                          strokeOpacity="0.6"
+                        />
+                        {/* Candle wick */}
+                        <line
+                          x1={c.x}
+                          y1={topY}
+                          x2={c.x}
+                          y2={topY - 9}
+                          stroke="#3B2618"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                        />
+                      </g>
+
+                      {/* =========================================================
+                          STEP 6: MULTI-LAYER LIVING FIRE VFX & RISING EMBERS
+                         ========================================================= */}
+                      {wickIgniteP > 0.01 && (
+                        <g
+                          transform={`translate(${c.x} ${topY - 9}) scale(${easeOutBack(wickIgniteP).toFixed(3)})`}
+                        >
+                          {/* 1. Pulsing Thermal Aura Halo */}
                           <circle
-                            cx={wick.x}
-                            cy={wick.y - 26}
-                            r="50"
-                            fill="url(#watercolorFlameHalo)"
+                            cx="0"
+                            cy="-14"
+                            r="36"
+                            fill="url(#fireThermalAura)"
+                            className="vfx-fire-halo"
                           />
+
+                          {/* 2. Ignition Expanding Shockwave Ring */}
+                          {wickIgniteP < 0.85 && (
+                            <circle
+                              cx="0"
+                              cy="-12"
+                              r={6 + wickIgniteP * 28}
+                              fill="none"
+                              stroke="#FDE047"
+                              strokeWidth={2.5 * (1 - wickIgniteP)}
+                              opacity={1 - wickIgniteP}
+                            />
+                          )}
+
+                          {/* 3. Outer Dancing Fire Tongue */}
                           <path
                             className="flame-outer"
-                            d={`M${wick.x} ${wick.y - 62} C${wick.x + 15} ${wick.y - 38}, ${wick.x + 13} ${wick.y - 12}, ${wick.x} ${wick.y - 4} C${wick.x - 13} ${wick.y - 12}, ${wick.x - 15} ${wick.y - 38}, ${wick.x} ${wick.y - 62} Z`}
-                            fill="#E89A32"
-                            stroke="#8F4E14"
-                            strokeWidth="2"
+                            d="M 0 -38 C 11 -24, 10 -6, 0 0 C -10 -6, -11 -24, 0 -38 Z"
+                            fill="url(#fireOuterTongue)"
+                            stroke="#9A3412"
+                            strokeWidth="1"
                           />
+
+                          {/* 4. Mid Golden Flame Core */}
                           <path
                             className="flame-inner"
-                            d={`M${wick.x} ${wick.y - 44} C${wick.x + 7} ${wick.y - 30}, ${wick.x + 7} ${wick.y - 14}, ${wick.x} ${wick.y - 8} C${wick.x - 7} ${wick.y - 14}, ${wick.x - 7} ${wick.y - 30}, ${wick.x} ${wick.y - 44} Z`}
-                            fill="#FFF7D6"
+                            d="M 0 -27 C 6.5 -18, 6 -5, 0 -1 C -6 -5, -6.5 -18, 0 -27 Z"
+                            fill="url(#fireInnerCore)"
+                          />
+
+                          {/* 5. Rising Glowing Ember Sparks */}
+                          <circle
+                            className="vfx-fire-ember ember-1"
+                            cx="-3"
+                            cy="-34"
+                            r="1.8"
+                            fill="#FEF08A"
+                          />
+                          <circle
+                            className="vfx-fire-ember ember-2"
+                            cx="4"
+                            cy="-40"
+                            r="1.4"
+                            fill="#F59E0B"
+                          />
+                          <circle
+                            className="vfx-fire-ember ember-3"
+                            cx="0"
+                            cy="-46"
+                            r="1.6"
+                            fill="#FFFDF5"
                           />
                         </g>
-                      ) : (
-                        smokeCount > 0 && (
-                          <path
-                            key={`smoke-${wick.id}-${smokeCount}`}
-                            className="candle-smoke"
-                            d={`M${wick.x} ${wick.y - 8} C${wick.x - 14} ${wick.y - 34}, ${wick.x + 16} ${wick.y - 58}, ${wick.x - 6} ${wick.y - 88}`}
-                            fill="none"
-                            stroke="#8A6E56"
-                            strokeWidth="3.5"
-                            strokeLinecap="round"
-                          />
-                        )
                       )}
                     </g>
                   );
                 })}
+
+                {/* Travelling Golden Ignition Spark Wand during Step 6 */}
+                {wandActive && (
+                  <g transform={`translate(${wandX.toFixed(1)} ${wandY.toFixed(1)})`}>
+                    <circle cx="0" cy="0" r="18" fill="url(#fireThermalAura)" />
+                    <path
+                      d="M 0 -9 L 2.5 -2.5 L 9 0 L 2.5 2.5 L 0 9 L -2.5 2.5 L -9 0 L -2.5 -2.5 Z"
+                      fill="#FFFDF5"
+                      stroke="#F59E0B"
+                      strokeWidth="1"
+                    />
+                  </g>
+                )}
               </svg>
             </div>
 
-            <div className="cake-progress-text" role="status" aria-live="polite">
-              {remainingCount > 0
-                ? `Đang thắp sáng ${activeFlameCount} / 5 ngọn nến sáp ong — chạm vào bánh hoặc nến để thổi`
-                : 'Cả 5 ngọn nến đã tắt! Điều ước bình an đã gửi tới bầu trời thu'}
+            {/* 6-Step Interactive Crafting Timeline Bar */}
+            <div className="craft-steps-bar" role="group" aria-label="Các bước tạo bánh sinh nhật">
+              {CRAFT_STEPS.map((st, idx) => {
+                const isDone = idx <= activeStepIndex;
+                const isCurrent = idx === activeStepIndex;
+                return (
+                  <button
+                    key={st.id}
+                    type="button"
+                    className={`craft-step-pill ${isCurrent ? 'is-current' : ''} ${isDone ? 'is-done' : ''}`}
+                    onClick={() => handleSelectStep(st.targetP)}
+                  >
+                    {st.label}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="cake-controls">
-              {remainingCount > 0 ? (
-                <>
-                  <button type="button" className="btn-primary" onClick={blowAllRemaining}>
-                    <span>Thổi Tắt Tất Cả Nến</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={toggleMicrophone}
-                    aria-pressed={micActive}
-                  >
-                    <span>{micActive ? 'Tắt Micro' : 'Dùng Micro Để Thổi'}</span>
-                  </button>
-                </>
-              ) : (
-                <button type="button" className="btn-secondary" onClick={relightCandles}>
-                  <span>Thắp Lại Nến Để Thổi Tiếp</span>
-                </button>
-              )}
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handlePlayFullAnimation}
+              >
+                <span>
+                  {autoPlayP !== null
+                    ? 'Đang Tạo Bánh & Thắp Nến...'
+                    : allLit
+                      ? 'Xem Lại Hoạt Ảnh Làm Bánh & Thắp Nến'
+                      : 'Tự Động Làm Bánh & Thắp Lửa'}
+                </span>
+              </button>
             </div>
 
-            {micActive && remainingCount > 0 && (
-              <div className="mic-meter-box">
-                <div>Bà thổi nhẹ vào micro nhé:</div>
-                <div className="mic-meter-track" aria-hidden="true">
-                  <div className="mic-meter-fill" style={{ width: `${micLevel}%` }} />
-                </div>
-              </div>
-            )}
-
-            {micMessage && <p className="mic-note-sepia">{micMessage}</p>}
-
-            {wishRevealed && (
+            {allLit && (
               <div className="wish-reveal-card" role="region" aria-live="polite">
                 <h3>{content.cake.wishTitle}</h3>
                 <p>{content.cake.wishMessage}</p>

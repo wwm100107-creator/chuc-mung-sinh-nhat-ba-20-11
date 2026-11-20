@@ -323,3 +323,18 @@ export function playLanternBell() {
     // Ignore audio errors on restricted devices
   }
 }
+
+const CAKE_STEP_FREQS = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25];
+
+export function playCakeStepChime(stepIndex: number) {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const gain = ctx.createGain();
+    gain.connect(ctx.destination);
+    const freq = CAKE_STEP_FREQS[Math.max(0, Math.min(CAKE_STEP_FREQS.length - 1, stepIndex))];
+    playBellTone(ctx, gain, freq, ctx.currentTime, 0.75, 0.065);
+  } catch {
+    // Ignore audio errors on restricted devices
+  }
+}

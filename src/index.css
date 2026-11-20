@@ -223,7 +223,7 @@ textarea:focus-visible {
 }
 
 .track-cake {
-  height: 235dvh;
+  height: 275dvh;
 }
 
 /* Shared section heading language */
@@ -1067,35 +1067,103 @@ textarea:focus-visible {
 }
 
 .cake-watercolor-card {
-  width: min(650px, 100%);
+  width: min(700px, 100%);
   margin-inline: auto;
-  padding: clamp(0.85rem, 2vw, 1.4rem) clamp(1rem, 2.8vw, 1.8rem);
+  padding: clamp(0.85rem, 2vw, 1.35rem) clamp(1rem, 2.8vw, 1.8rem);
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.watercolor-cake-painting-box {
+.animated-cake-stage-box {
   position: relative;
-  width: min(370px, 76vw);
-  aspect-ratio: 1 / 1;
-  margin-bottom: 0.25rem;
-  cursor: pointer;
+  width: min(410px, 84vw);
+  margin-bottom: 0.35rem;
   transition: width 0.35s ease;
 }
 
-.watercolor-cake-img {
+.animated-cake-svg {
   width: 100%;
-  height: 100%;
-  object-fit: contain;
+  height: auto;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 14px 24px rgba(84, 52, 24, 0.12));
 }
 
-.watercolor-flames-overlay {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+.vfx-fire-halo {
+  transform-box: fill-box;
+  transform-origin: center center;
+  animation: fire-halo-pulse 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes fire-halo-pulse {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.78;
+  }
+  100% {
+    transform: scale(1.14);
+    opacity: 1;
+  }
+}
+
+.vfx-fire-ember {
+  transform-box: fill-box;
+  transform-origin: center center;
+  animation: ember-float-up 1.5s ease-out infinite;
+}
+
+.vfx-fire-ember.ember-2 {
+  animation-delay: -0.5s;
+}
+
+.vfx-fire-ember.ember-3 {
+  animation-delay: -1s;
+}
+
+@keyframes ember-float-up {
+  0% {
+    opacity: 0.95;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-22px) scale(0.3);
+  }
+}
+
+.craft-steps-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.craft-step-pill {
+  padding: 0.28rem 0.72rem;
+  min-height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--ink-line);
+  background: var(--bg-ivory);
+  color: var(--sepia);
+  font-family: var(--font-serif);
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.craft-step-pill.is-done {
+  border-color: var(--gold);
+  background: #fdf3df;
+  color: var(--ink);
+}
+
+.craft-step-pill.is-current {
+  background: var(--crimson);
+  border-color: var(--crimson);
+  color: #fffaf2;
+  transform: scale(1.04);
 }
 
 .candle-hit {
@@ -1715,7 +1783,7 @@ textarea:focus-visible {
     height: 230dvh;
   }
   .track-cake {
-    height: 195dvh;
+    height: 245dvh;
   }
 
   .watercolor-envelope-art-box {
@@ -1942,16 +2010,38 @@ textarea:focus-visible {
   }
 
   .cake-watercolor-card {
-    padding: 0.85rem 1rem;
+    padding: 0.75rem 0.9rem;
   }
 
-  .watercolor-cake-painting-box {
-    width: min(235px, 58vw);
-    margin-bottom: 0.15rem;
+  .animated-cake-stage-box {
+    width: min(295px, 74vw);
+    margin-bottom: 0.2rem;
   }
 
-  .cake-watercolor-card.is-wish-revealed .watercolor-cake-painting-box {
-    width: min(165px, 42vw);
+  .cake-watercolor-card.is-wish-revealed .animated-cake-stage-box {
+    width: min(215px, 54vw);
+  }
+
+  .craft-steps-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    width: 100%;
+    padding-bottom: 3px;
+    margin-bottom: 0.5rem;
+    scrollbar-width: none;
+  }
+
+  .craft-steps-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .craft-step-pill {
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 0.74rem;
+    padding: 0.22rem 0.62rem;
+    min-height: 28px;
   }
 
   .cake-compact-heading .section-desc {
@@ -2083,12 +2173,12 @@ textarea:focus-visible {
     height: 178px;
   }
 
-  .watercolor-cake-painting-box {
-    width: 195px;
+  .animated-cake-stage-box {
+    width: 225px;
   }
 
-  .cake-watercolor-card.is-wish-revealed .watercolor-cake-painting-box {
-    width: 140px;
+  .cake-watercolor-card.is-wish-revealed .animated-cake-stage-box {
+    width: 170px;
   }
 }
 

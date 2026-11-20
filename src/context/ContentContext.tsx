@@ -75,7 +75,7 @@ export interface SiteContent {
   };
 }
 
-const STORAGE_KEY = 'snvv-ba-editable-content-v1';
+const STORAGE_KEY = 'snvv-ba-editable-content-v2';
 
 export function getDefaultSiteContent(): SiteContent {
   const dateInfo = getBirthdayDateInfo();
@@ -107,13 +107,13 @@ export function getDefaultSiteContent(): SiteContent {
       secretGift: { ...SECRET_SEVENTH_BLESSING },
     },
     cake: {
-      sectionKicker: 'Bánh Sinh Nhật Hoa Cúc Mùa Thu 20·11',
-      sectionTitle: 'Ước Một Điều Thật Bình An, Bà Nhé',
+      sectionKicker: 'Chiếc Bánh Kem Hoa Cúc Mùa Thu 20·11',
+      sectionTitle: 'Từng Lớp Bánh Ngọt Ngào Dâng Tặng Bà',
       sectionDesc:
-        'Chạm trực tiếp vào ngọn nến trên tranh, bấm thổi tất cả, dùng micro — hoặc cuộn nhẹ xuống để làn gió thu thổi nến.',
+        'Cuộn trang từ từ hoặc bấm nút bên dưới để xem từng tầng bánh, lớp kem tươi chảy mềm, hoa cúc vàng và 5 ngọn nến thắp lửa sáng rực.',
       wishTitle: 'Chúc Mừng Sinh Nhật Bà 20/11!',
       wishMessage:
-        'Kính chúc Bà tuổi mới luôn dồi dào sức khỏe, tay chân vững vàng và nụ cười rạng rỡ mỗi sớm mai!',
+        'Chiếc bánh sinh nhật đã thắp sáng đủ 5 ngọn nến ấm áp. Kính chúc Bà tuổi mới luôn dồi dào sức khỏe, tay chân vững vàng và nụ cười rạng rỡ mỗi sớm mai!',
     },
     finale: {
       lanternKicker: 'Hồ Hoa Đăng Mùa Thu 20·11',
