@@ -1,17 +1,10 @@
-import { useMemo, useRef, type TouchEvent } from 'react';
+import { useMemo, useRef } from 'react';
 import { useSiteContent } from '../context/ContentContext';
-import {
-  clamp,
-  smoothstep,
-  useChapterScroll,
-  useScrollProgressJump,
-} from '../utils/useScrollStory';
+import { clamp, smoothstep, useChapterScroll } from '../utils/useScrollStory';
 
 export function LetterSection() {
   const trackRef = useRef<HTMLElement | null>(null);
   const { progress, enterProgress, exitProgress } = useChapterScroll(trackRef, 0.12);
-  const jumpToProgress = useScrollProgressJump(trackRef);
-  const touchStartXRef = useRef<number | null>(null);
   const { content } = useSiteContent();
 
   const paragraphs = content.letter.paragraphs;
@@ -37,27 +30,6 @@ export function LetterSection() {
       }),
     );
   }, [paragraphs]);
-
-  const jumpParagraph = (idx: number) => {
-    const safeIdx = clamp(idx, 0, totalParagraphs - 1);
-    const targetP = 0.1 + ((safeIdx + 0.65) / totalParagraphs) * 0.72;
-    jumpToProgress(targetP);
-  };
-
-  const handleTouchStart = (e: TouchEvent) => {
-    if (e.touches.length > 0) {
-      touchStartXRef.current = e.touches[0].clientX;
-    }
-  };
-
-  const handleTouchEnd = (e: TouchEvent) => {
-    if (touchStartXRef.current === null || e.changedTouches.length === 0) return;
-    const dx = e.changedTouches[0].clientX - touchStartXRef.current;
-    touchStartXRef.current = null;
-    if (Math.abs(dx) > 40) {
-      jumpParagraph(activeParaIndex + (dx < 0 ? 1 : -1));
-    }
-  };
 
   const inkPercent = Math.round(readingPos * 100);
   const sceneOpacity = clamp(enterProgress * 1.15 - exitProgress * 0.7, 0, 1).toFixed(3);
@@ -101,8 +73,6 @@ export function LetterSection() {
 
           <div
             className="storybook-sheet letter-watercolor-sheet"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
             style={{
               transform: `perspective(1200px) rotateX(${(1 - unrollFactor) * 6}deg) scaleY(${0.95 + unrollFactor * 0.05})`,
             }}
@@ -131,7 +101,6 @@ export function LetterSection() {
                   <p
                     key={pIdx}
                     className={`letter-para-scrub ${isActivePara ? 'is-active' : ''}`}
-                    onClick={() => jumpParagraph(pIdx)}
                   >
                     {words.map((item, wIdx) => {
                       const delta = readingPos - item.ratio;
@@ -151,7 +120,7 @@ export function LetterSection() {
               })}
             </div>
 
-            {/* Mobile: Spacious Reader with Real Word-by-Word Ink Scrubbing & Touch Swipe */}
+            {/* Mobile: Spacious Scroll-Driven Reader with Real Word-by-Word Ink Scrubbing */}
             <div className="letter-body-mobile">
               <p key={activeParaIndex} className="letter-mobile-active-para">
                 {(tokenizedParagraphs[activeParaIndex] ?? []).map((item, wIdx) => {
@@ -168,41 +137,6 @@ export function LetterSection() {
                   );
                 })}
               </p>
-
-              <div className="letter-mobile-pager">
-                <button
-                  type="button"
-                  className="pager-icon-btn"
-                  onClick={() => jumpParagraph(activeParaIndex - 1)}
-                  disabled={activeParaIndex === 0}
-                  aria-label="Đoạn thư trước"
-                >
-                  ‹
-                </button>
-                <div className="pager-dots" role="tablist" aria-label="Chọn đoạn thư">
-                  {paragraphs.map((_, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      role="tab"
-                      aria-selected={idx === activeParaIndex}
-                      className={`pager-dot ${idx === activeParaIndex ? 'is-active' : ''}`}
-                      onClick={() => jumpParagraph(idx)}
-                    >
-                      {idx + 1}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  className="pager-icon-btn"
-                  onClick={() => jumpParagraph(activeParaIndex + 1)}
-                  disabled={activeParaIndex === totalParagraphs - 1}
-                  aria-label="Đoạn thư tiếp theo"
-                >
-                  ›
-                </button>
-              </div>
             </div>
 
             <footer className={`letter-signoff ${sealStamped ? 'is-revealed' : ''}`}>

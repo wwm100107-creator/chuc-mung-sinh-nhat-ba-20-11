@@ -1,38 +1,27 @@
 import { useEffect, useRef } from 'react';
 import { useSiteContent } from '../context/ContentContext';
 import { playWaxSealChime } from '../utils/musicBox';
-import {
-  smoothstep,
-  useChapterScroll,
-  useScrollProgressJump,
-} from '../utils/useScrollStory';
+import { smoothstep, useChapterScroll } from '../utils/useScrollStory';
 
 interface EnvelopeIntroProps {
-  onStartMusic: () => void;
   onBurst: (x?: number, y?: number) => void;
 }
 
-export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
+export function EnvelopeIntro({ onBurst }: EnvelopeIntroProps) {
   const trackRef = useRef<HTMLElement | null>(null);
   const { progress, exitProgress } = useChapterScroll(trackRef, 0.12);
-  const jumpToProgress = useScrollProgressJump(trackRef);
   const chimeFiredRef = useRef(false);
   const { content } = useSiteContent();
 
   useEffect(() => {
     if (progress >= 0.3 && !chimeFiredRef.current) {
       chimeFiredRef.current = true;
+      playWaxSealChime();
       onBurst(window.innerWidth * 0.5, window.innerHeight * 0.42);
+    } else if (progress < 0.05) {
+      chimeFiredRef.current = false;
     }
   }, [progress, onBurst]);
-
-  const handleTapSeal = () => {
-    chimeFiredRef.current = true;
-    playWaxSealChime();
-    onStartMusic();
-    onBurst(window.innerWidth * 0.5, window.innerHeight * 0.44);
-    jumpToProgress(0.86);
-  };
 
   const envelopeExit = smoothstep(progress, 0.36, 0.72);
   const cardReveal = smoothstep(progress, 0.34, 0.76);
@@ -40,7 +29,6 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
   const floatScale = (1 + progress * 0.08).toFixed(3);
   const floatY = (-progress * 24).toFixed(1);
 
-  // Smooth chapter exit transition into Chapter 2
   const sceneExitY = (-exitProgress * 44).toFixed(1);
   const sceneExitOpacity = (1 - exitProgress * 0.65).toFixed(3);
   const sceneExitScale = (1 - exitProgress * 0.06).toFixed(3);
@@ -59,7 +47,6 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
           transform: `translate3d(0, ${sceneExitY}px, 0) scale(${sceneExitScale})`,
         }}
       >
-        {/* Breathing Ambient Watercolor Aura VFX */}
         <div
           className="vfx-ambient-halo"
           aria-hidden="true"
@@ -74,7 +61,7 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
           style={{
             opacity: 1 - envelopeExit,
             transform: `translate3d(0, ${envelopeExit * -52}px, 0) scale(${1 + envelopeExit * 0.1})`,
-            pointerEvents: envelopeExit < 0.65 ? 'auto' : 'none',
+            pointerEvents: 'none',
           }}
         >
           <header className="envelope-header">
@@ -87,16 +74,6 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
 
           <div
             className="watercolor-envelope-art-box vfx-levitate"
-            onClick={handleTapSeal}
-            role="button"
-            tabIndex={0}
-            aria-label="Chạm vào phong thư hoa cúc để mở thiệp và bật nhạc"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleTapSeal();
-              }
-            }}
             style={{
               transform: `translate3d(0, ${floatY}px, 0) scale(${floatScale})`,
             }}
@@ -109,17 +86,9 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
               height={520}
               decoding="async"
             />
-
-            <span className="painted-seal-hotspot" aria-hidden="true">
-              <span className="painted-seal-text">20·11</span>
-            </span>
           </div>
 
           <div className="envelope-cta-row">
-            <button type="button" className="btn-primary mobile-full-btn" onClick={handleTapSeal}>
-              <span>{content.envelope.openButtonText}</span>
-            </button>
-
             <div className="scroll-cue" style={{ opacity: hintFade }}>
               <span>Vuốt nhẹ lên để lật mở từng trang</span>
             </div>
@@ -132,7 +101,7 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
           style={{
             opacity: cardReveal,
             transform: `translate3d(0, ${(1 - cardReveal) * 44}px, 0) scale(${0.9 + cardReveal * 0.1})`,
-            pointerEvents: cardReveal > 0.45 ? 'auto' : 'none',
+            pointerEvents: 'none',
           }}
         >
           <div className="storybook-sheet welcome-reveal-card">

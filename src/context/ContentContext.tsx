@@ -10,12 +10,13 @@ import {
 import {
   BLESSINGS_LIST,
   CLOSING_POEM,
+  INITIAL_LANTERNS,
   LETTER_CONTENT,
-  QUICK_WISH_SUGGESTIONS,
   SECRET_SEVENTH_BLESSING,
   STORY_BEATS,
   getBirthdayDateInfo,
   type BlessingItem,
+  type LanternWish,
 } from '../data/birthdayContent';
 
 export interface EditableStoryBeat {
@@ -30,7 +31,6 @@ export interface SiteContent {
     dateBadge: string;
     recipientTitle: string;
     envelopeSubtitle: string;
-    openButtonText: string;
     welcomeBadge: string;
     welcomeTitleTop: string;
     welcomeTitleHighlight: string;
@@ -67,7 +67,7 @@ export interface SiteContent {
     lanternKicker: string;
     lanternTitle: string;
     lanternDesc: string;
-    quickSuggestions: string[];
+    lanterns: LanternWish[];
     finaleKicker: string;
     finaleTitle: string;
     poemLines: string[];
@@ -75,7 +75,7 @@ export interface SiteContent {
   };
 }
 
-const STORAGE_KEY = 'snvv-ba-editable-content-v2';
+const STORAGE_KEY = 'snvv-ba-editable-content-v3';
 
 export function getDefaultSiteContent(): SiteContent {
   const dateInfo = getBirthdayDateInfo();
@@ -83,8 +83,7 @@ export function getDefaultSiteContent(): SiteContent {
     envelope: {
       dateBadge: dateInfo.badgeText,
       recipientTitle: 'Kính gửi Bà yêu quý',
-      envelopeSubtitle: 'Chạm vào phong thư hoa cúc hoặc vuốt nhẹ lên để mở thiệp',
-      openButtonText: 'Mở Thiệp & Bật Nhạc Hộp Đàn',
+      envelopeSubtitle: 'Vuốt nhẹ trang giấy để lật mở từng chương kỷ niệm',
       welcomeBadge: 'Ngày Sinh Nhật Đặc Biệt · 20 Tháng 11',
       welcomeTitleTop: 'Chúc Mừng Sinh Nhật',
       welcomeTitleHighlight: 'Bà Yêu Quý',
@@ -110,17 +109,16 @@ export function getDefaultSiteContent(): SiteContent {
       sectionKicker: 'Chiếc Bánh Kem Hoa Cúc Mùa Thu 20·11',
       sectionTitle: 'Từng Lớp Bánh Ngọt Ngào Dâng Tặng Bà',
       sectionDesc:
-        'Cuộn trang từ từ hoặc bấm nút bên dưới để xem từng tầng bánh, lớp kem tươi chảy mềm, hoa cúc vàng và 5 ngọn nến thắp lửa sáng rực.',
+        'Cuộn trang từ từ để xem từng tầng bánh, lớp kem tươi chảy mềm, hoa cúc vàng và 5 ngọn nến thắp lửa sáng rực.',
       wishTitle: 'Chúc Mừng Sinh Nhật Bà 20/11!',
       wishMessage:
         'Chiếc bánh sinh nhật đã thắp sáng đủ 5 ngọn nến ấm áp. Kính chúc Bà tuổi mới luôn dồi dào sức khỏe, tay chân vững vàng và nụ cười rạng rỡ mỗi sớm mai!',
     },
     finale: {
       lanternKicker: 'Hồ Hoa Đăng Mùa Thu 20·11',
-      lanternTitle: 'Thả Đèn Hoa Đăng Cầu Phúc Thọ Bình An',
-      lanternDesc:
-        'Vuốt ngang hoặc chạm từng ngọn đèn để xem lời chúc trên mặt hồ, và tự tay thả thêm ngọn đèn mới gửi tới Bà.',
-      quickSuggestions: [...QUICK_WISH_SUGGESTIONS],
+      lanternTitle: 'Đèn Hoa Đăng Cầu Phúc Thọ Bình An',
+      lanternDesc: 'Những ngọn hoa đăng mang lời nguyện cầu sức khỏe và bình an từ con cháu.',
+      lanterns: INITIAL_LANTERNS.map((l) => ({ ...l })),
       finaleKicker: 'Lời Thơ Kết Kính Dâng Bà',
       finaleTitle: 'Mãi Khỏe Mạnh & An Nhiên, Bà Nhé',
       poemLines: [...CLOSING_POEM],
@@ -180,7 +178,6 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     const def = getDefaultSiteContent();
     if (typeof window === 'undefined') return def;
 
-    // 1. Check URL hash `#gift=<base64>` first so shared links display custom content on any device
     const hash = window.location.hash;
     if (hash.startsWith('#gift=')) {
       const encoded = decodeURIComponent(hash.slice('#gift='.length));
@@ -190,7 +187,6 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // 2. Otherwise check localStorage
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
       if (saved) {

@@ -1,11 +1,6 @@
 import { useSiteContent } from '../context/ContentContext';
 
-interface FinaleSectionProps {
-  onGrandCelebrate: () => void;
-  onScrollToTop: () => void;
-}
-
-export function FinaleSection({ onGrandCelebrate, onScrollToTop }: FinaleSectionProps) {
+export function FinaleSection() {
   const { content } = useSiteContent();
 
   return (
@@ -32,21 +27,11 @@ export function FinaleSection({ onGrandCelebrate, onScrollToTop }: FinaleSection
             {content.finale.finaleTitle}
           </h2>
 
-          <blockquote className="finale-poem">
+          <blockquote className="finale-poem" style={{ marginBottom: 0 }}>
             {content.finale.poemLines.map((line, index) => (
               <div key={index}>{line}</div>
             ))}
           </blockquote>
-
-          <div className="finale-actions">
-            <button type="button" className="btn-primary" onClick={onGrandCelebrate}>
-              <span>Tung Cánh Hoa Cúc Chúc Mừng</span>
-            </button>
-
-            <button type="button" className="btn-secondary" onClick={onScrollToTop}>
-              <span>Cuộn Lên Đầu Trang</span>
-            </button>
-          </div>
         </div>
 
         <footer className="site-footer">{content.finale.footerText}</footer>

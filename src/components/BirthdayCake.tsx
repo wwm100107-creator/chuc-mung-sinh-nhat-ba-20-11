@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useSiteContent } from '../context/ContentContext';
 import { playCakeStepChime, playWishCelebration } from '../utils/musicBox';
 import {
@@ -6,21 +6,11 @@ import {
   remap,
   smoothstep,
   useChapterScroll,
-  useScrollProgressJump,
 } from '../utils/useScrollStory';
 
 interface BirthdayCakeProps {
   onGrandCelebrate: () => void;
 }
-
-const CRAFT_STEPS = [
-  { id: 0, label: '01 · Đặt cốt bánh', targetP: 0.14 },
-  { id: 1, label: '02 · Phủ kem tầng dưới', targetP: 0.3 },
-  { id: 2, label: '03 · Chồng tầng & phủ kem', targetP: 0.5 },
-  { id: 3, label: '04 · Kết nơ & hoa cúc', targetP: 0.68 },
-  { id: 4, label: '05 · Cắm 5 cây nến', targetP: 0.79 },
-  { id: 5, label: '06 · Thắp lửa ước nguyện', targetP: 0.96 },
-];
 
 const CANDLES = [
   { id: 0, x: 224, baseY: 162, height: 58 },
@@ -38,9 +28,6 @@ function easeOutBack(t: number): number {
   return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
 }
 
-/**
- * Generates an animated SVG path for thick, viscous cream frosting slowly dripping down a cylinder cake tier.
- */
 function buildFlowingCreamPath(
   leftX: number,
   rightX: number,
@@ -53,22 +40,18 @@ function buildFlowingCreamPath(
   const n = dripHeights.length;
   const segW = width / n;
 
-  // Phase A (0 -> 0.35): cream cap spreads across top; Phase B (0.18 -> 1): individual drips slowly ooze down
   const dripFlow = smoothstep(pourP, 0.15, 1.0);
   const baseApron = 10 * smoothstep(pourP, 0.05, 0.45);
 
   let d = `M ${leftX} ${topY}`;
-  // Top back arc of the cream cap
   d += ` A ${width / 2} ${ellipseRy} 0 0 1 ${rightX} ${topY}`;
   d += ` L ${rightX} ${(topY + baseApron).toFixed(1)}`;
 
-  // Scalloped viscous drips from right to left along the front wall
   for (let i = n - 1; i >= 0; i -= 1) {
     const xRight = leftX + (i + 1) * segW;
     const xMid = leftX + (i + 0.5) * segW;
     const xLeft = leftX + i * segW;
 
-    // Stagger each drip slightly so they flow down organically at different rates
     const staggerDelay = (i % 3) * 0.11;
     const localDripP = smoothstep(dripFlow, staggerDelay, Math.min(1, staggerDelay + 0.78));
     const dripLen = baseApron + dripHeights[i] * localDripP;
@@ -85,19 +68,12 @@ function buildFlowingCreamPath(
 
 export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
   const trackRef = useRef<HTMLElement | null>(null);
-  const { progress, enterProgress, exitProgress } = useChapterScroll(trackRef, 0.12);
-  const jumpToProgress = useScrollProgressJump(trackRef);
+  const { progress: t, enterProgress, exitProgress } = useChapterScroll(trackRef, 0.12);
   const { content } = useSiteContent();
 
-  // Auto-play state so user can also watch the full cake assembly with 1 tap
-  const [autoPlayP, setAutoPlayP] = useState<number | null>(null);
-  const autoRafRef = useRef<number | null>(null);
   const lastStepChimeRef = useRef<number>(-1);
   const celebrationFiredRef = useRef(false);
 
-  const t = autoPlayP !== null ? autoPlayP : progress;
-
-  // Determine current active step [0..5]
   const activeStepIndex =
     t < 0.16 ? 0 : t < 0.33 ? 1 : t < 0.52 ? 2 : t < 0.71 ? 3 : t < 0.82 ? 4 : 5;
 
@@ -119,56 +95,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
     }
   }, [t, onGrandCelebrate]);
 
-  useEffect(() => {
-    return () => {
-      if (autoRafRef.current !== null) {
-        window.cancelAnimationFrame(autoRafRef.current);
-      }
-    };
-  }, []);
-
-  const handlePlayFullAnimation = () => {
-    if (autoRafRef.current !== null) {
-      window.cancelAnimationFrame(autoRafRef.current);
-    }
-    lastStepChimeRef.current = -1;
-    celebrationFiredRef.current = false;
-    setAutoPlayP(0.01);
-
-    const startTime = performance.now();
-    const durationMs = 6800;
-
-    const step = (now: number) => {
-      const elapsed = now - startTime;
-      const ratio = clamp(elapsed / durationMs, 0, 1);
-      setAutoPlayP(ratio);
-      if (ratio < 1) {
-        autoRafRef.current = window.requestAnimationFrame(step);
-      } else {
-        autoRafRef.current = null;
-        // Sync scroll position to end of track so resuming scroll doesn't snap back
-        jumpToProgress(0.96);
-        window.setTimeout(() => {
-          setAutoPlayP(null);
-        }, 450);
-      }
-    };
-
-    autoRafRef.current = window.requestAnimationFrame(step);
-  };
-
-  const handleSelectStep = (targetP: number) => {
-    if (autoRafRef.current !== null) {
-      window.cancelAnimationFrame(autoRafRef.current);
-      autoRafRef.current = null;
-    }
-    setAutoPlayP(null);
-    jumpToProgress(targetP);
-  };
-
-  // =====================================================
-  // LAYER-BY-LAYER ANIMATION TIMELINE PARAMETERS [0..1]
-  // =====================================================
   // 1. Celadon Cake Stand (0.00 -> 0.09)
   const standP = smoothstep(t, 0.0, 0.09);
   const standY = (1 - standP) * 65;
@@ -226,12 +152,10 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
   const fireMasterP = smoothstep(t, 0.81, 0.95);
   const allLit = fireMasterP >= 0.92;
 
-  // Wand spark position sweeping across the 5 wicks during ignition
   const wandActive = fireMasterP > 0.01 && fireMasterP < 0.96;
   const wandX = 216 + fireMasterP * 132;
   const wandY = 92 - Math.sin(fireMasterP * Math.PI * 5) * 10;
 
-  // Chapter transition
   const sceneOpacity = clamp(enterProgress * 1.15 - exitProgress * 0.7, 0, 1).toFixed(3);
   const sceneY = ((1 - enterProgress) * 48 - exitProgress * 38).toFixed(1);
   const sceneScale = (0.93 + enterProgress * 0.07 - exitProgress * 0.05).toFixed(3);
@@ -246,7 +170,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
     const sx = flipX ? -scaleVal : scaleVal;
     return (
       <g transform={`translate(${cx} ${cy}) scale(${sx.toFixed(3)} ${scaleVal.toFixed(3)})`}>
-        {/* Sage-green watercolor leaves behind blossom */}
         <path
           d="M -8 4 C -28 -10, -44 -26, -48 -44 C -30 -40, -14 -22, -4 -4 Z"
           fill="#88A785"
@@ -266,7 +189,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
           strokeWidth="1.2"
         />
 
-        {/* Outer ring of 12 golden chrysanthemum petals */}
         {Array.from({ length: 12 }).map((_, i) => (
           <g key={`o-${i}`} transform={`rotate(${i * 30})`}>
             <path
@@ -278,7 +200,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
           </g>
         ))}
 
-        {/* Inner ring of 12 warm amber petals */}
         {Array.from({ length: 12 }).map((_, i) => (
           <g key={`m-${i}`} transform={`rotate(${i * 30 + 15})`}>
             <path
@@ -290,11 +211,9 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
           </g>
         ))}
 
-        {/* Core golden bud */}
         <circle cx="0" cy="0" r="7" fill="#D98624" stroke="#6B421B" strokeWidth="1.1" />
         <circle cx="0" cy="0" r="3.5" fill="#FCE08B" />
 
-        {/* Two delicate white cúc họa mi daisies beside the chrysanthemum */}
         {[
           { dx: 28, dy: 8, r: 0.75 },
           { dx: -26, dy: -22, r: 0.65 },
@@ -357,7 +276,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
           <div
             className={`storybook-sheet cake-watercolor-card ${allLit ? 'is-wish-revealed' : ''}`}
           >
-            {/* Step-by-Step Animated Watercolor Cake & Fire VFX Stage */}
             <div className="animated-cake-stage-box">
               <svg
                 viewBox="0 0 560 450"
@@ -366,7 +284,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                 aria-label="Hoạt ảnh tạo chiếc bánh kem sinh nhật hai tầng phủ kem chảy, kết hoa cúc vàng và thắp sáng năm ngọn nến"
               >
                 <defs>
-                  {/* Watercolor & Fire VFX Gradients */}
                   <linearGradient id="celadonPlateTop" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stopColor="#D6E6D3" />
                     <stop offset="55%" stopColor="#A5C0A2" />
@@ -403,7 +320,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                     <stop offset="100%" stopColor="#BC7B22" />
                   </linearGradient>
 
-                  {/* Multi-Layer Living Fire VFX Gradients */}
                   <radialGradient id="fireThermalAura" cx="50%" cy="50%" r="50%">
                     <stop offset="0%" stopColor="#FFF3B8" stopOpacity="0.92" />
                     <stop offset="40%" stopColor="#F59E0B" stopOpacity="0.45" />
@@ -422,18 +338,14 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   </linearGradient>
                 </defs>
 
-                {/* =========================================================
-                    STEP 1A: CELADON JADE CERAMIC CAKE STAND
-                   ========================================================= */}
+                {/* STEP 1A: CELADON JADE CERAMIC CAKE STAND */}
                 <g
                   style={{
                     opacity: standP,
                     transform: `translate(0px, ${standY.toFixed(1)}px)`,
                   }}
                 >
-                  {/* Soft table shadow */}
                   <ellipse cx="280" cy="426" rx="95" ry="12" fill="rgba(90, 62, 38, 0.14)" />
-                  {/* Pedestal base & stem */}
                   <path
                     d="M 248 344 C 254 374, 240 402, 214 416 C 214 426, 346 426, 346 416 C 320 402, 306 374, 312 344 Z"
                     fill="url(#celadonPedestal)"
@@ -449,7 +361,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                     stroke="#523A28"
                     strokeWidth="1.3"
                   />
-                  {/* Plate rim */}
                   <ellipse
                     cx="280"
                     cy="342"
@@ -480,9 +391,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   />
                 </g>
 
-                {/* =========================================================
-                    STEP 1B: BOTTOM SPONGE CAKE TIER DROPPING & STACKING
-                   ========================================================= */}
+                {/* STEP 1B: BOTTOM SPONGE CAKE TIER */}
                 {sponge1P > 0.01 && (
                   <g
                     style={{
@@ -490,14 +399,12 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                       transform: `translate(280px, ${(334 + sponge1DropY).toFixed(1)}px) scale(${(1 + sponge1Bounce).toFixed(3)}, ${(1 - sponge1Bounce).toFixed(3)}) translate(-280px, -334px)`,
                     }}
                   >
-                    {/* Bottom tier cylinder wall */}
                     <path
                       d="M 136 254 L 136 330 A 144 20 0 0 0 424 330 L 424 254 Z"
                       fill="url(#spongeBody)"
                       stroke="#5C3D28"
                       strokeWidth="1.6"
                     />
-                    {/* Sponge cake horizontal layer seam */}
                     <path
                       d="M 136 292 A 144 19 0 0 0 424 292"
                       fill="none"
@@ -506,7 +413,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                       strokeDasharray="6 4"
                       strokeOpacity="0.65"
                     />
-                    {/* Bottom tier top surface */}
                     <ellipse
                       cx="280"
                       cy="254"
@@ -519,9 +425,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   </g>
                 )}
 
-                {/* =========================================================
-                    STEP 2: BOTTOM TIER CREAM FROSTING POURING & DRIPPING DOWN
-                   ========================================================= */}
+                {/* STEP 2: BOTTOM TIER CREAM FROSTING POURING & DRIPPING */}
                 {cream1StreamOpacity > 0.01 && (
                   <path
                     d="M 280 110 L 280 254"
@@ -552,9 +456,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   </g>
                 )}
 
-                {/* =========================================================
-                    STEP 4A: ROSE-CRIMSON SILK RIBBON AROUND BOTTOM TIER
-                   ========================================================= */}
+                {/* STEP 4A: ROSE-CRIMSON SILK RIBBON */}
                 {ribbonWrapP > 0.01 && (
                   <g
                     style={{
@@ -571,9 +473,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   </g>
                 )}
 
-                {/* =========================================================
-                    STEP 3A: TOP SPONGE CAKE TIER DROPPING & STACKING
-                   ========================================================= */}
+                {/* STEP 3A: TOP SPONGE CAKE TIER */}
                 {sponge2P > 0.01 && (
                   <g
                     style={{
@@ -614,9 +514,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   </g>
                 )}
 
-                {/* =========================================================
-                    STEP 3B: TOP TIER CREAM FROSTING POURING & DRIPPING DOWN
-                   ========================================================= */}
+                {/* STEP 3B: TOP TIER CREAM FROSTING POURING & DRIPPING */}
                 {cream2StreamOpacity > 0.01 && (
                   <path
                     d="M 280 45 L 280 162"
@@ -647,10 +545,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   </g>
                 )}
 
-                {/* =========================================================
-                    STEP 4B: SILK BOW, CHRYSANTHEMUMS, DAISIES & SUGAR PEARLS
-                   ========================================================= */}
-                {/* Golden sugar pearls along tier base */}
+                {/* STEP 4B: SILK BOW, CHRYSANTHEMUMS, DAISIES & SUGAR PEARLS */}
                 {pearlsP > 0.01 &&
                   BOTTOM_PEARLS.map((px, idx) => {
                     const localP = easeOutBack(
@@ -670,12 +565,10 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                     );
                   })}
 
-                {/* Center Rose-Crimson Silk Bow */}
                 {bowPopP > 0.01 && (
                   <g
                     transform={`translate(280 318) scale(${Math.max(0, bowPopP).toFixed(3)})`}
                   >
-                    {/* Flowing ribbon tails */}
                     <path
                       d="M -6 4 C -18 24, -26 46, -34 66 L -18 62 C -12 44, -6 24, 0 6 Z"
                       fill="url(#roseSilk)"
@@ -688,7 +581,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                       stroke="#5E2220"
                       strokeWidth="1.3"
                     />
-                    {/* Left & Right Bow Loops */}
                     <path
                       d="M -4 0 C -26 -18, -54 -14, -52 4 C -50 18, -22 14, -4 2 Z"
                       fill="url(#roseSilk)"
@@ -701,7 +593,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                       stroke="#5E2220"
                       strokeWidth="1.4"
                     />
-                    {/* Center Bow Knot */}
                     <rect
                       x="-7"
                       y="-6"
@@ -715,14 +606,11 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   </g>
                 )}
 
-                {/* 3 Hand-Painted Watercolor Chrysanthemum & Daisy Clusters */}
                 {renderChrysanthemumCluster(198, 244, flowerLeftP * 0.92, false)}
                 {renderChrysanthemumCluster(362, 242, flowerRightP * 0.95, true)}
                 {renderChrysanthemumCluster(170, 326, flowerBaseP * 0.78, false)}
 
-                {/* =========================================================
-                    STEP 5: 5 SLENDER BEESWAX CANDLES DESCENDING ONTO CAKE
-                   ========================================================= */}
+                {/* STEP 5 & 6: 5 BEESWAX CANDLES & LIVING FIRE VFX */}
                 {CANDLES.map((c, idx) => {
                   const candleStart = 0.7 + idx * 0.018;
                   const candleP = smoothstep(t, candleStart, candleStart + 0.08);
@@ -731,7 +619,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   const dropY = (1 - easeOutBack(candleP)) * -85;
                   const topY = c.baseY - c.height;
 
-                  // Step 6: Ignition progress for this specific candle
                   const wickIgniteP = smoothstep(
                     fireMasterP,
                     idx * 0.14,
@@ -746,7 +633,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                           transform: `translate(0px, ${dropY.toFixed(1)}px)`,
                         }}
                       >
-                        {/* Frosting base shadow */}
                         <ellipse
                           cx={c.x}
                           cy={c.baseY + 2}
@@ -754,7 +640,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                           ry="3"
                           fill="rgba(110, 78, 42, 0.22)"
                         />
-                        {/* Beeswax candle shaft */}
                         <rect
                           x={c.x - 5.5}
                           y={topY}
@@ -765,14 +650,12 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                           stroke="#5C3D28"
                           strokeWidth="1.3"
                         />
-                        {/* Subtle spiral wax stripe */}
                         <path
                           d={`M ${c.x - 5.5} ${topY + 18} L ${c.x + 5.5} ${topY + 11} M ${c.x - 5.5} ${topY + 38} L ${c.x + 5.5} ${topY + 31}`}
                           stroke="#FFF6DC"
                           strokeWidth="1.5"
                           strokeOpacity="0.6"
                         />
-                        {/* Candle wick */}
                         <line
                           x1={c.x}
                           y1={topY}
@@ -784,14 +667,10 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                         />
                       </g>
 
-                      {/* =========================================================
-                          STEP 6: MULTI-LAYER LIVING FIRE VFX & RISING EMBERS
-                         ========================================================= */}
                       {wickIgniteP > 0.01 && (
                         <g
                           transform={`translate(${c.x} ${topY - 9}) scale(${easeOutBack(wickIgniteP).toFixed(3)})`}
                         >
-                          {/* 1. Pulsing Thermal Aura Halo */}
                           <circle
                             cx="0"
                             cy="-14"
@@ -800,7 +679,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                             className="vfx-fire-halo"
                           />
 
-                          {/* 2. Ignition Expanding Shockwave Ring */}
                           {wickIgniteP < 0.85 && (
                             <circle
                               cx="0"
@@ -813,7 +691,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                             />
                           )}
 
-                          {/* 3. Outer Dancing Fire Tongue */}
                           <path
                             className="flame-outer"
                             d="M 0 -38 C 11 -24, 10 -6, 0 0 C -10 -6, -11 -24, 0 -38 Z"
@@ -822,14 +699,12 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                             strokeWidth="1"
                           />
 
-                          {/* 4. Mid Golden Flame Core */}
                           <path
                             className="flame-inner"
                             d="M 0 -27 C 6.5 -18, 6 -5, 0 -1 C -6 -5, -6.5 -18, 0 -27 Z"
                             fill="url(#fireInnerCore)"
                           />
 
-                          {/* 5. Rising Glowing Ember Sparks */}
                           <circle
                             className="vfx-fire-ember ember-1"
                             cx="-3"
@@ -857,7 +732,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   );
                 })}
 
-                {/* Travelling Golden Ignition Spark Wand during Step 6 */}
                 {wandActive && (
                   <g transform={`translate(${wandX.toFixed(1)} ${wandY.toFixed(1)})`}>
                     <circle cx="0" cy="0" r="18" fill="url(#fireThermalAura)" />
@@ -870,40 +744,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   </g>
                 )}
               </svg>
-            </div>
-
-            {/* 6-Step Interactive Crafting Timeline Bar */}
-            <div className="craft-steps-bar" role="group" aria-label="Các bước tạo bánh sinh nhật">
-              {CRAFT_STEPS.map((st, idx) => {
-                const isDone = idx <= activeStepIndex;
-                const isCurrent = idx === activeStepIndex;
-                return (
-                  <button
-                    key={st.id}
-                    type="button"
-                    className={`craft-step-pill ${isCurrent ? 'is-current' : ''} ${isDone ? 'is-done' : ''}`}
-                    onClick={() => handleSelectStep(st.targetP)}
-                  >
-                    {st.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="cake-controls">
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={handlePlayFullAnimation}
-              >
-                <span>
-                  {autoPlayP !== null
-                    ? 'Đang Tạo Bánh & Thắp Nến...'
-                    : allLit
-                      ? 'Xem Lại Hoạt Ảnh Làm Bánh & Thắp Nến'
-                      : 'Tự Động Làm Bánh & Thắp Lửa'}
-                </span>
-              </button>
             </div>
 
             {allLit && (

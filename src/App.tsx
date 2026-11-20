@@ -23,8 +23,23 @@ export default function App() {
 
   const nightMode = activeChapterIndex >= 4;
 
+  // Automatically start the gentle Web Audio music box on first user gesture
   useEffect(() => {
+    const startAudioOnce = () => {
+      musicBox.start();
+      window.removeEventListener('pointerdown', startAudioOnce);
+      window.removeEventListener('touchstart', startAudioOnce);
+      window.removeEventListener('keydown', startAudioOnce);
+    };
+
+    window.addEventListener('pointerdown', startAudioOnce, { passive: true });
+    window.addEventListener('touchstart', startAudioOnce, { passive: true });
+    window.addEventListener('keydown', startAudioOnce, { passive: true });
+
     return () => {
+      window.removeEventListener('pointerdown', startAudioOnce);
+      window.removeEventListener('touchstart', startAudioOnce);
+      window.removeEventListener('keydown', startAudioOnce);
       musicBox.dispose();
     };
   }, [musicBox]);
@@ -37,35 +52,20 @@ export default function App() {
     canvasRef.current?.launchGrandCelebration();
   }, []);
 
-  const handleStartMusic = useCallback(() => {
-    musicBox.start();
-  }, [musicBox]);
-
-  const handleScrollToTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
   return (
     <ContentProvider>
       <AmbientPetalsCanvas ref={canvasRef} velocityRef={velocityRef} nightMode={nightMode} />
-      <FloatingControls
-        globalProgress={globalProgress}
-        activeChapterIndex={activeChapterIndex}
-        nightMode={nightMode}
-      />
+      <FloatingControls globalProgress={globalProgress} />
       <ContentEditorModal />
       <div className="app-shell">
         <main>
-          <EnvelopeIntro onStartMusic={handleStartMusic} onBurst={handleBurst} />
+          <EnvelopeIntro onBurst={handleBurst} />
           <HeroSection />
           <LetterSection />
           <BlessingsGrid onBurst={handleBurst} />
           <BirthdayCake onGrandCelebrate={handleGrandCelebrate} />
-          <LanternRiver onBurst={handleBurst} />
-          <FinaleSection
-            onGrandCelebrate={handleGrandCelebrate}
-            onScrollToTop={handleScrollToTop}
-          />
+          <LanternRiver />
+          <FinaleSection />
         </main>
       </div>
     </ContentProvider>

@@ -43,7 +43,6 @@ export function ContentEditorModal() {
 
   return (
     <>
-      {/* Subtle floating trigger button */}
       <button
         type="button"
         className="content-editor-fab"
@@ -134,20 +133,6 @@ export function ContentEditorModal() {
                         updateContent((prev) => ({
                           ...prev,
                           envelope: { ...prev.envelope, envelopeSubtitle: e.target.value },
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="field-group">
-                    <label>Chữ trên nút mở thiệp</label>
-                    <input
-                      type="text"
-                      className="field-input"
-                      value={content.envelope.openButtonText}
-                      onChange={(e) =>
-                        updateContent((prev) => ({
-                          ...prev,
-                          envelope: { ...prev.envelope, openButtonText: e.target.value },
                         }))
                       }
                     />
@@ -578,7 +563,7 @@ export function ContentEditorModal() {
                     </div>
                   </div>
                   <div className="field-group">
-                    <label>Hướng dẫn thổi nến</label>
+                    <label>Mô tả dưới tiêu đề bánh sinh nhật</label>
                     <textarea
                       rows={2}
                       className="field-input"
@@ -592,7 +577,7 @@ export function ContentEditorModal() {
                     />
                   </div>
                   <div className="field-group">
-                    <label>Tiêu đề hiện ra sau khi thổi tắt hết 5 ngọn nến</label>
+                    <label>Tiêu đề lời chúc hiện ra khi bánh thắp sáng đủ 5 ngọn nến</label>
                     <input
                       type="text"
                       className="field-input"
@@ -606,7 +591,7 @@ export function ContentEditorModal() {
                     />
                   </div>
                   <div className="field-group">
-                    <label>Lời chúc hiện ra sau khi thổi tắt nến</label>
+                    <label>Nội dung lời chúc bên dưới chiếc bánh</label>
                     <textarea
                       rows={3}
                       className="field-input"
@@ -668,6 +653,53 @@ export function ContentEditorModal() {
                       }
                     />
                   </div>
+
+                  {content.finale.lanterns.map((lantern, idx) => (
+                    <div key={lantern.id} className="editor-subcard">
+                      <h4>Đèn hoa đăng số 0{idx + 1}</h4>
+                      <div className="field-group">
+                        <label>Người gửi</label>
+                        <input
+                          type="text"
+                          className="field-input"
+                          value={lantern.sender}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            updateContent((prev) => ({
+                              ...prev,
+                              finale: {
+                                ...prev.finale,
+                                lanterns: prev.finale.lanterns.map((l, i) =>
+                                  i === idx ? { ...l, sender: val } : l,
+                                ),
+                              },
+                            }));
+                          }}
+                        />
+                      </div>
+                      <div className="field-group">
+                        <label>Lời chúc trên đèn</label>
+                        <textarea
+                          rows={2}
+                          className="field-input"
+                          value={lantern.message}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            updateContent((prev) => ({
+                              ...prev,
+                              finale: {
+                                ...prev.finale,
+                                lanterns: prev.finale.lanterns.map((l, i) =>
+                                  i === idx ? { ...l, message: val } : l,
+                                ),
+                              },
+                            }));
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+
                   <div className="editor-row-2">
                     <div className="field-group">
                       <label>Nhãn phụ phần thơ kết</label>

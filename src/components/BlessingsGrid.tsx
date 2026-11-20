@@ -1,6 +1,6 @@
-import { useEffect, useRef, type TouchEvent } from 'react';
+import { useEffect, useRef } from 'react';
 import { useSiteContent } from '../context/ContentContext';
-import { clamp, useChapterScroll, useScrollProgressJump } from '../utils/useScrollStory';
+import { clamp, useChapterScroll } from '../utils/useScrollStory';
 
 interface BlessingsGridProps {
   onBurst: (x?: number, y?: number) => void;
@@ -9,14 +9,12 @@ interface BlessingsGridProps {
 export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
   const trackRef = useRef<HTMLElement | null>(null);
   const { progress, enterProgress, exitProgress } = useChapterScroll(trackRef, 0.12);
-  const jumpToProgress = useScrollProgressJump(trackRef);
   const secretBurstFiredRef = useRef(false);
-  const touchStartXRef = useRef<number | null>(null);
   const { content } = useSiteContent();
 
   const items = content.blessings.items;
   const secretGift = content.blessings.secretGift;
-  const totalSteps = items.length; // 6 items -> step 6 is the 7th secret gift
+  const totalSteps = items.length;
 
   const continuousStep = clamp((progress / 0.9) * totalSteps, 0, totalSteps);
   const activeStep = Math.min(totalSteps, Math.round(continuousStep));
@@ -26,30 +24,10 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
     if (isSecretStage && !secretBurstFiredRef.current) {
       secretBurstFiredRef.current = true;
       onBurst(window.innerWidth * 0.5, window.innerHeight * 0.45);
+    } else if (progress < 0.1) {
+      secretBurstFiredRef.current = false;
     }
-  }, [isSecretStage, onBurst]);
-
-  const handleSelectStep = (idx: number) => {
-    const safeIdx = clamp(idx, 0, totalSteps);
-    const targetP = (safeIdx / Math.max(1, totalSteps)) * 0.9;
-    jumpToProgress(targetP);
-    onBurst(window.innerWidth * 0.5, window.innerHeight * 0.48);
-  };
-
-  const handleTouchStart = (e: TouchEvent) => {
-    if (e.touches.length > 0) {
-      touchStartXRef.current = e.touches[0].clientX;
-    }
-  };
-
-  const handleTouchEnd = (e: TouchEvent) => {
-    if (touchStartXRef.current === null || e.changedTouches.length === 0) return;
-    const dx = e.changedTouches[0].clientX - touchStartXRef.current;
-    touchStartXRef.current = null;
-    if (Math.abs(dx) > 40) {
-      handleSelectStep(activeStep + (dx < 0 ? 1 : -1));
-    }
-  };
+  }, [isSecretStage, progress, onBurst]);
 
   const wreathRot = (progress * 42).toFixed(1);
   const sceneOpacity = clamp(enterProgress * 1.15 - exitProgress * 0.7, 0, 1).toFixed(3);
@@ -111,42 +89,10 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                   </span>
                 </div>
               </div>
-
-              <div className="petal-chips-grid" role="tablist" aria-label="Chọn lời chúc">
-                {items.map((item, idx) => {
-                  const isCurrent = !isSecretStage && idx === activeStep;
-                  const isOpened = isSecretStage || idx <= activeStep;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={isCurrent}
-                      className={`petal-chip-btn ${isCurrent ? 'is-active' : ''} ${isOpened ? 'is-opened' : ''}`}
-                      onClick={() => handleSelectStep(idx)}
-                    >
-                      {item.sealLabel}
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={isSecretStage}
-                  className={`petal-chip-btn petal-chip-secret ${isSecretStage ? 'is-active' : ''}`}
-                  onClick={() => handleSelectStep(totalSteps)}
-                >
-                  <span>Quà Thứ 7</span>
-                </button>
-              </div>
             </div>
 
-            {/* Right / Bottom: Non-overlapping 3D Coverflow / Depth Deck with Touch Swipe */}
-            <div
-              className="blessings-3d-stage"
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-            >
+            {/* Right / Bottom: Pure Scroll-Driven 3D Coverflow / Depth Deck */}
+            <div className="blessings-3d-stage">
               {items.map((item, idx) => {
                 const delta = idx - continuousStep;
                 const absDelta = Math.abs(delta);
@@ -167,7 +113,6 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                       opacity,
                       transform: `perspective(1200px) translate3d(${tx.toFixed(1)}px, ${ty.toFixed(1)}px, ${tz.toFixed(1)}px) rotateY(${rotY.toFixed(1)}deg) scale(${scale.toFixed(3)})`,
                       zIndex: 20 - Math.round(absDelta * 5),
-                      pointerEvents: isFront ? 'auto' : 'none',
                     }}
                   >
                     <div className="blessing-card-top">
@@ -178,7 +123,7 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                     <h3 className="deck-card-title">{item.title}</h3>
                     <p className="deck-card-body">{item.message}</p>
                     <div className="deck-card-footer-hint">
-                      Vuốt ngang, cuộn xuống hoặc chạm chữ bên trên ({idx + 1}/{totalSteps})
+                      Cuộn nhẹ xuống để lật mở lời chúc tiếp theo ({idx + 1}/{totalSteps})
                     </div>
                   </article>
                 );
@@ -201,7 +146,6 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                       opacity: opacity7,
                       transform: `perspective(1200px) translate3d(${tx7.toFixed(1)}px, ${ty7.toFixed(1)}px, ${tz7.toFixed(1)}px) scale(${scale7.toFixed(3)})`,
                       zIndex: isSecretStage ? 25 : 5,
-                      pointerEvents: isSecretStage ? 'auto' : 'none',
                     }}
                   >
                     <div className="storybook-date-tag">{secretGift.badge}</div>
