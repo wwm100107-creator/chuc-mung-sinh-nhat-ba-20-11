@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, type TouchEvent } from 'react';
 import { STORY_BEATS, getBirthdayDateInfo } from '../data/birthdayContent';
 import {
   clamp,
@@ -9,15 +9,36 @@ import {
 
 export function HeroSection() {
   const trackRef = useRef<HTMLElement | null>(null);
-  const { progress } = useChapterScroll(trackRef, 0.15);
+  const { progress } = useChapterScroll(trackRef, 0.16);
   const jumpToProgress = useScrollProgressJump(trackRef);
+  const touchStartXRef = useRef<number | null>(null);
   const dateInfo = getBirthdayDateInfo();
 
   const continuousBeat = clamp(progress * 2.55, 0, 2);
   const activeBeatIndex = Math.round(continuousBeat);
 
-  const artScale = (0.96 + progress * 0.08).toFixed(3);
-  const parallaxY = ((progress - 0.5) * -22).toFixed(1);
+  const artScale = (0.96 + progress * 0.07).toFixed(3);
+  const parallaxY = ((progress - 0.5) * -16).toFixed(1);
+
+  const selectBeat = (idx: number) => {
+    const safeIdx = clamp(idx, 0, STORY_BEATS.length - 1);
+    jumpToProgress((safeIdx + 0.35) / STORY_BEATS.length);
+  };
+
+  const handleTouchStart = (e: TouchEvent) => {
+    if (e.touches.length > 0) {
+      touchStartXRef.current = e.touches[0].clientX;
+    }
+  };
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    if (touchStartXRef.current === null || e.changedTouches.length === 0) return;
+    const dx = e.changedTouches[0].clientX - touchStartXRef.current;
+    touchStartXRef.current = null;
+    if (Math.abs(dx) > 40) {
+      selectBeat(activeBeatIndex + (dx < 0 ? 1 : -1));
+    }
+  };
 
   return (
     <section
@@ -35,8 +56,9 @@ export function HeroSection() {
                 src="/images/hero-chrysanthemum.png"
                 alt="Tranh màu nước hoa cúc vàng, cúc họa mi trắng và ấm trà xanh dịu dàng kính tặng sinh nhật Bà"
                 className="watercolor-hero-painting watercolor-blend-img"
-                width={560}
-                height={560}
+                width={480}
+                height={480}
+                decoding="async"
                 style={{
                   transform: `scale(${artScale}) translate3d(0, ${parallaxY}px, 0)`,
                 }}
@@ -47,21 +69,26 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* 3D Curved Vertical Carousel of Story Beats */}
+          {/* 3D Story Beats with Vertical Scroll + Horizontal Touch Swipe */}
           <div className="story-content-col">
             <div className="storybook-date-tag">
               <span>{dateInfo.badgeText}</span>
             </div>
 
-            <div id="hero-heading" className="story-3d-viewport">
+            <div
+              id="hero-heading"
+              className="story-3d-viewport"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
               {STORY_BEATS.map((beat, idx) => {
                 const offset = idx - continuousBeat;
                 const absOff = Math.abs(offset);
-                const translateY = (offset * 52).toFixed(1);
-                const translateZ = (-absOff * 90).toFixed(1);
-                const rotateX = (offset * -12).toFixed(1);
-                const scale = Math.max(0.84, 1 - absOff * 0.11).toFixed(3);
-                const opacity = clamp(1 - absOff * 0.78, 0, 1).toFixed(3);
+                const translateX = (offset * 18).toFixed(1);
+                const translateY = (offset * 22).toFixed(1);
+                const translateZ = (-absOff * 85).toFixed(1);
+                const scale = Math.max(0.86, 1 - absOff * 0.1).toFixed(3);
+                const opacity = clamp(1 - absOff * 0.85, 0, 1).toFixed(3);
                 const isCurrent = idx === activeBeatIndex;
 
                 return (
@@ -70,7 +97,7 @@ export function HeroSection() {
                     className={`storybook-sheet story-3d-card ${isCurrent ? 'is-current' : ''}`}
                     style={{
                       opacity,
-                      transform: `perspective(1000px) translate3d(0, ${translateY}px, ${translateZ}px) rotateX(${rotateX}deg) scale(${scale})`,
+                      transform: `perspective(1000px) translate3d(${translateX}px, ${translateY}px, ${translateZ}px) scale(${scale})`,
                       zIndex: 10 - Math.round(absOff * 4),
                       pointerEvents: isCurrent ? 'auto' : 'none',
                     }}
@@ -89,7 +116,7 @@ export function HeroSection() {
                   key={beat.id}
                   type="button"
                   className={`beat-pill-btn ${idx === activeBeatIndex ? 'is-active' : ''}`}
-                  onClick={() => jumpToProgress((idx + 0.35) / STORY_BEATS.length)}
+                  onClick={() => selectBeat(idx)}
                   aria-pressed={idx === activeBeatIndex}
                 >
                   <span>0{idx + 1}</span>

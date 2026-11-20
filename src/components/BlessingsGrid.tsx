@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type TouchEvent } from 'react';
 import { BLESSINGS_LIST, SECRET_SEVENTH_BLESSING } from '../data/birthdayContent';
 import { clamp, useChapterScroll, useScrollProgressJump } from '../utils/useScrollStory';
 
@@ -8,9 +8,10 @@ interface BlessingsGridProps {
 
 export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
   const trackRef = useRef<HTMLElement | null>(null);
-  const { progress } = useChapterScroll(trackRef, 0.15);
+  const { progress } = useChapterScroll(trackRef, 0.16);
   const jumpToProgress = useScrollProgressJump(trackRef);
   const secretBurstFiredRef = useRef(false);
+  const touchStartXRef = useRef<number | null>(null);
 
   const continuousStep = clamp((progress / 0.9) * 6, 0, 6);
   const activeStep = Math.min(6, Math.round(continuousStep));
@@ -24,12 +25,28 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
   }, [isSecretStage, onBurst]);
 
   const handleSelectStep = (idx: number) => {
-    const targetP = (idx / 6) * 0.9;
+    const safeIdx = clamp(idx, 0, 6);
+    const targetP = (safeIdx / 6) * 0.9;
     jumpToProgress(targetP);
     onBurst(window.innerWidth * 0.5, window.innerHeight * 0.48);
   };
 
-  const wreathRot = (progress * 38).toFixed(1);
+  const handleTouchStart = (e: TouchEvent) => {
+    if (e.touches.length > 0) {
+      touchStartXRef.current = e.touches[0].clientX;
+    }
+  };
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    if (touchStartXRef.current === null || e.changedTouches.length === 0) return;
+    const dx = e.changedTouches[0].clientX - touchStartXRef.current;
+    touchStartXRef.current = null;
+    if (Math.abs(dx) > 40) {
+      handleSelectStep(activeStep + (dx < 0 ? 1 : -1));
+    }
+  };
+
+  const wreathRot = (progress * 36).toFixed(1);
 
   return (
     <section
@@ -55,8 +72,10 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                   src="/images/watercolor-blessings.png"
                   alt="Tranh màu nước vòng hoa sáu đóa cúc vàng, cúc họa mi và dải lụa hồng"
                   className="watercolor-wreath-img watercolor-blend-img"
-                  width={340}
-                  height={340}
+                  width={300}
+                  height={300}
+                  loading="lazy"
+                  decoding="async"
                   style={{ transform: `rotate(${wreathRot}deg)` }}
                 />
                 <div className="wreath-center-calligraphy">
@@ -98,20 +117,24 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
               </div>
             </div>
 
-            {/* Right / Bottom: True 3D Perspective Revolving Watercolor Card Deck */}
-            <div className="blessings-3d-stage">
+            {/* Right / Bottom: Non-overlapping 3D Coverflow / Depth Deck with Touch Swipe */}
+            <div
+              className="blessings-3d-stage"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
               {BLESSINGS_LIST.map((item, idx) => {
                 const delta = idx - continuousStep;
                 const absDelta = Math.abs(delta);
                 const isFront = idx === activeStep && !isSecretStage;
 
-                const tx = delta < 0 ? delta * 34 : delta * 14;
-                const ty = delta < 0 ? delta * 60 : delta * 20;
+                // Horizontal + Z-depth fan so cards NEVER fly upward over the petal buttons on mobile
+                const tx = delta * 26;
+                const ty = absDelta * 10;
                 const tz = -absDelta * 85;
-                const rotX = delta < 0 ? -delta * 13 : delta * -5;
-                const rotZ = delta < 0 ? delta * -3.5 : delta * 2;
-                const scale = clamp(1 - absDelta * 0.07, 0.74, 1);
-                const opacity = delta < -1.1 ? 0 : clamp(1 - absDelta * 0.45, 0, 1);
+                const rotY = delta * -10;
+                const scale = clamp(1 - absDelta * 0.08, 0.76, 1);
+                const opacity = absDelta > 1.45 ? 0 : clamp(1 - absDelta * 0.58, 0, 1);
 
                 return (
                   <article
@@ -119,7 +142,7 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                     className={`storybook-sheet deck-3d-card ${isFront ? 'is-front' : ''}`}
                     style={{
                       opacity,
-                      transform: `perspective(1200px) translate3d(${tx.toFixed(1)}px, ${ty.toFixed(1)}px, ${tz.toFixed(1)}px) rotateX(${rotX.toFixed(1)}deg) rotateZ(${rotZ.toFixed(1)}deg) scale(${scale.toFixed(3)})`,
+                      transform: `perspective(1200px) translate3d(${tx.toFixed(1)}px, ${ty.toFixed(1)}px, ${tz.toFixed(1)}px) rotateY(${rotY.toFixed(1)}deg) scale(${scale.toFixed(3)})`,
                       zIndex: 20 - Math.round(absDelta * 5),
                       pointerEvents: isFront ? 'auto' : 'none',
                     }}
@@ -132,7 +155,7 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                     <h3 className="deck-card-title">{item.title}</h3>
                     <p className="deck-card-body">{item.message}</p>
                     <div className="deck-card-footer-hint">
-                      Cuộn tiếp hoặc chạm các ấn chữ bên cạnh ({idx + 1}/6)
+                      Vuốt ngang, cuộn xuống hoặc chạm chữ bên trên ({idx + 1}/6)
                     </div>
                   </article>
                 );
@@ -142,9 +165,10 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                 const delta7 = 6 - continuousStep;
                 const abs7 = Math.abs(delta7);
                 const opacity7 = clamp(1 - abs7 * 0.85, 0, 1);
-                const scale7 = clamp(1 - abs7 * 0.12, 0.8, 1);
-                const ty7 = delta7 * 46;
-                const tz7 = -abs7 * 105;
+                const scale7 = clamp(1 - abs7 * 0.12, 0.82, 1);
+                const tx7 = delta7 * 26;
+                const ty7 = abs7 * 10;
+                const tz7 = -abs7 * 95;
 
                 return (
                   <aside
@@ -152,7 +176,7 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                     aria-live="polite"
                     style={{
                       opacity: opacity7,
-                      transform: `perspective(1200px) translate3d(0, ${ty7.toFixed(1)}px, ${tz7.toFixed(1)}px) scale(${scale7.toFixed(3)})`,
+                      transform: `perspective(1200px) translate3d(${tx7.toFixed(1)}px, ${ty7.toFixed(1)}px, ${tz7.toFixed(1)}px) scale(${scale7.toFixed(3)})`,
                       zIndex: isSecretStage ? 25 : 5,
                       pointerEvents: isSecretStage ? 'auto' : 'none',
                     }}

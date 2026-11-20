@@ -14,7 +14,7 @@ interface EnvelopeIntroProps {
 
 export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
   const trackRef = useRef<HTMLElement | null>(null);
-  const { progress } = useChapterScroll(trackRef, 0.15);
+  const { progress } = useChapterScroll(trackRef, 0.16);
   const jumpToProgress = useScrollProgressJump(trackRef);
   const chimeFiredRef = useRef(false);
   const dateInfo = getBirthdayDateInfo();
@@ -37,8 +37,8 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
   const envelopeExit = smoothstep(progress, 0.42, 0.78);
   const cardReveal = smoothstep(progress, 0.4, 0.82);
   const hintFade = 1 - smoothstep(progress, 0.0, 0.22);
-  const floatScale = (1 + progress * 0.12).toFixed(3);
-  const floatY = (-progress * 28).toFixed(1);
+  const floatScale = (1 + progress * 0.08).toFixed(3);
+  const floatY = (-progress * 20).toFixed(1);
 
   return (
     <section
@@ -53,7 +53,7 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
           className="envelope-layer"
           style={{
             opacity: 1 - envelopeExit,
-            transform: `translate3d(0, ${envelopeExit * -54}px, 0) scale(${1 + envelopeExit * 0.08})`,
+            transform: `translate3d(0, ${envelopeExit * -44}px, 0) scale(${1 + envelopeExit * 0.06})`,
             pointerEvents: envelopeExit < 0.65 ? 'auto' : 'none',
           }}
         >
@@ -63,12 +63,22 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
             </div>
             <h1 className="envelope-recipient">Kính gửi Bà yêu quý</h1>
             <p className="envelope-subtitle">
-              Cuộn nhẹ trang giấy hoặc chạm vào phong thư hoa cúc để mở thiệp
+              Chạm vào phong thư hoa cúc hoặc vuốt nhẹ lên để mở thiệp
             </p>
           </header>
 
           <div
             className="watercolor-envelope-art-box"
+            onClick={handleTapSeal}
+            role="button"
+            tabIndex={0}
+            aria-label="Chạm vào phong thư hoa cúc để mở thiệp và bật nhạc"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleTapSeal();
+              }
+            }}
             style={{
               transform: `translate3d(0, ${floatY}px, 0) scale(${floatScale})`,
             }}
@@ -77,28 +87,23 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
               src="/images/watercolor-envelope.png"
               alt="Tranh màu nước phong thư cổ điển thắt nơ lụa hồng với hoa cúc vàng và cúc họa mi"
               className="watercolor-blend-img"
-              width={560}
-              height={560}
+              width={520}
+              height={520}
+              decoding="async"
             />
 
-            {/* Interactive touch target positioned over the painted crimson wax seal */}
-            <button
-              type="button"
-              className="painted-seal-hotspot"
-              onClick={handleTapSeal}
-              aria-label="Chạm vào dấu sáp đỏ trên phong thư để mở thiệp và bật nhạc"
-            >
+            <span className="painted-seal-hotspot" aria-hidden="true">
               <span className="painted-seal-text">20·11</span>
-            </button>
+            </span>
           </div>
 
           <div className="envelope-cta-row">
-            <button type="button" className="btn-primary" onClick={handleTapSeal}>
+            <button type="button" className="btn-primary mobile-full-btn" onClick={handleTapSeal}>
               <span>Mở Thiệp &amp; Bật Nhạc Hộp Đàn</span>
             </button>
 
             <div className="scroll-cue" style={{ opacity: hintFade }}>
-              <span>Hoặc vuốt nhẹ lên để lật mở theo nhịp cuộn</span>
+              <span>Vuốt nhẹ lên để lật mở từng trang</span>
             </div>
           </div>
         </div>
@@ -108,7 +113,7 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
           className="opened-card-layer"
           style={{
             opacity: cardReveal,
-            transform: `translate3d(0, ${(1 - cardReveal) * 48}px, 0) scale(${0.9 + cardReveal * 0.1})`,
+            transform: `translate3d(0, ${(1 - cardReveal) * 38}px, 0) scale(${0.92 + cardReveal * 0.08})`,
             pointerEvents: cardReveal > 0.45 ? 'auto' : 'none',
           }}
         >
@@ -120,8 +125,9 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
                 src="/images/hero-chrysanthemum.png"
                 alt="Tranh màu nước hoa cúc vàng mùa thu và ấm trà xanh"
                 className="watercolor-blend-img"
-                width={320}
-                height={320}
+                width={280}
+                height={280}
+                decoding="async"
               />
             </div>
 
@@ -136,7 +142,7 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
             </p>
 
             <div className="scroll-cue-strong">
-              <span>Cuộn xuống để thưởng trà &amp; đọc thư</span>
+              <span>Vuốt tiếp xuống để thưởng trà &amp; đọc thư</span>
             </div>
           </div>
         </div>

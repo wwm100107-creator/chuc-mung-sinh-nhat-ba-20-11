@@ -17,7 +17,7 @@ const PAINTED_CANDLE_WICKS = [
 
 export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
   const trackRef = useRef<HTMLElement | null>(null);
-  const { progress } = useChapterScroll(trackRef, 0.15);
+  const { progress } = useChapterScroll(trackRef, 0.16);
   const jumpToProgress = useScrollProgressJump(trackRef);
 
   const [litCandles, setLitCandles] = useState<boolean[]>([true, true, true, true, true]);
@@ -71,6 +71,13 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
     setSmokeTick((prev) => prev.map((v, idx) => (idx === index ? v + 1 : v)));
   };
 
+  const extinguishNextLit = () => {
+    const nextIdx = litRef.current.findIndex(Boolean);
+    if (nextIdx !== -1) {
+      extinguishCandle(nextIdx);
+    }
+  };
+
   const blowAllRemaining = () => {
     const indices = litRef.current
       .map((isLit, idx) => (isLit ? idx : -1))
@@ -79,7 +86,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
     indices.forEach((candleIdx, step) => {
       window.setTimeout(() => {
         extinguishCandle(candleIdx);
-      }, step * 125);
+      }, step * 120);
     });
   };
 
@@ -159,10 +166,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
         const now = performance.now();
         if (rms > 0.13 && now - lastBlowTimeRef.current > 240) {
           lastBlowTimeRef.current = now;
-          const nextLit = litRef.current.findIndex(Boolean);
-          if (nextLit !== -1) {
-            extinguishCandle(nextLit);
-          }
+          extinguishNextLit();
         }
 
         micRafRef.current = window.requestAnimationFrame(detectBlow);
@@ -192,19 +196,23 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
               Ước Một Điều Thật Bình An, Bà Nhé
             </h2>
             <p className="section-desc">
-              Chạm trực tiếp vào từng ngọn nến trên tranh, bấm thổi tất cả, dùng micro — hoặc cuộn
-              nhẹ xuống để làn gió thu thổi nến.
+              Chạm trực tiếp vào ngọn nến trên tranh, bấm thổi tất cả, dùng micro — hoặc cuộn nhẹ
+              xuống để làn gió thu thổi nến.
             </p>
           </div>
 
-          <div className="storybook-sheet cake-watercolor-card">
-            <div className="watercolor-cake-painting-box">
+          <div
+            className={`storybook-sheet cake-watercolor-card ${wishRevealed ? 'is-wish-revealed' : ''}`}
+          >
+            <div className="watercolor-cake-painting-box" onClick={extinguishNextLit}>
               <img
                 src="/images/watercolor-cake.png"
                 alt="Tranh màu nước bánh sinh nhật hai tầng trang trí hoa cúc vàng, nơ lụa hồng và năm ngọn nến sáp ong"
                 className="watercolor-cake-img watercolor-blend-img"
-                width={520}
-                height={520}
+                width={480}
+                height={480}
+                loading="lazy"
+                decoding="async"
               />
 
               {/* Interactive Watercolor Candle Flames & Smoke Overlay aligned to the 5 painted wicks */}
@@ -235,20 +243,23 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                           ? `Ngọn nến số ${idx + 1} đang cháy — chạm để thổi tắt`
                           : `Ngọn nến số ${idx + 1} đã thổi tắt`
                       }
-                      onClick={() => extinguishCandle(idx)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        extinguishCandle(idx);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
+                          e.stopPropagation();
                           extinguishCandle(idx);
                         }
                       }}
                     >
-                      {/* Generous touch target around each painted candle */}
                       <rect
-                        x={wick.x - 24}
-                        y={wick.y - 80}
-                        width="48"
-                        height="220"
+                        x={wick.x - 28}
+                        y={wick.y - 90}
+                        width="56"
+                        height="240"
                         fill="transparent"
                       />
 
@@ -257,7 +268,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                           <circle
                             cx={wick.x}
                             cy={wick.y - 26}
-                            r="48"
+                            r="50"
                             fill="url(#watercolorFlameHalo)"
                           />
                           <path
@@ -294,7 +305,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
 
             <div className="cake-progress-text" role="status" aria-live="polite">
               {remainingCount > 0
-                ? `Đang thắp sáng ${activeFlameCount} / 5 ngọn nến sáp ong — chạm vào ngọn nến để thổi`
+                ? `Đang thắp sáng ${activeFlameCount} / 5 ngọn nến sáp ong — chạm vào bánh hoặc nến để thổi`
                 : 'Cả 5 ngọn nến đã tắt! Điều ước bình an đã gửi tới bầu trời thu'}
             </div>
 
