@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { Gift, Sparkles } from 'lucide-react';
 import { BLESSINGS_LIST, SECRET_SEVENTH_BLESSING } from '../data/birthdayContent';
 import { clamp, useChapterScroll, useScrollProgressJump } from '../utils/useScrollStory';
 
@@ -154,7 +153,6 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                   className={`petal-chip-btn petal-chip-secret ${isSecretStage ? 'is-active' : ''}`}
                   onClick={() => handleSelectStep(6)}
                 >
-                  <Gift size={14} aria-hidden="true" />
                   <span>Quà Thứ 7</span>
                 </button>
               </div>
@@ -192,7 +190,6 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                       <span className={`blessing-seal accent-${item.accent}`}>
                         {item.sealLabel} · Lời chúc 0{idx + 1}
                       </span>
-                      <Sparkles size={20} color="#C88D32" aria-hidden="true" />
                     </div>
                     <h3 className="deck-card-title">{item.title}</h3>
                     <p className="deck-card-body">{item.message}</p>

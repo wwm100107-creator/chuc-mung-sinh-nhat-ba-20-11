@@ -1,4 +1,3 @@
-import { ArrowUp, Sparkles } from 'lucide-react';
 import { CLOSING_POEM } from '../data/birthdayContent';
 
 interface FinaleSectionProps {
@@ -30,12 +29,10 @@ export function FinaleSection({ onGrandCelebrate, onScrollToTop }: FinaleSection
 
           <div className="finale-actions">
             <button type="button" className="btn-primary vfx-glow-btn" onClick={onGrandCelebrate}>
-              <Sparkles size={18} aria-hidden="true" />
               <span>Bắn Đại Tiệc Pháo Hoa</span>
             </button>
 
             <button type="button" className="btn-secondary" onClick={onScrollToTop}>
-              <ArrowUp size={18} aria-hidden="true" />
               <span>Cuộn Lên Đầu Trang</span>
             </button>
           </div>

@@ -1,5 +1,4 @@
 import { useMemo, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Feather } from 'lucide-react';
 import { LETTER_CONTENT } from '../data/birthdayContent';
 import {
   clamp,
@@ -54,7 +53,6 @@ export function LetterSection() {
         <div className="container letter-stage-inner">
           <div className="section-heading letter-compact-heading">
             <div className="section-kicker">
-              <Feather size={14} aria-hidden="true" />
               <span>Bức Thư Cuộn Lụa Hoàng Kim</span>
             </div>
             <h2 id="letter-heading" className="section-title">
@@ -146,7 +144,7 @@ export function LetterSection() {
                     disabled={activeParaIndex === 0}
                     aria-label="Đoạn thư trước"
                   >
-                    <ChevronLeft size={18} aria-hidden="true" />
+                    ‹
                   </button>
                   <span className="pager-status">
                     Đoạn {activeParaIndex + 1} / {totalParagraphs}
@@ -158,7 +156,7 @@ export function LetterSection() {
                     disabled={activeParaIndex === totalParagraphs - 1}
                     aria-label="Đoạn thư tiếp theo"
                   >
-                    <ChevronRight size={18} aria-hidden="true" />
+                    ›
                   </button>
                 </div>
               </div>

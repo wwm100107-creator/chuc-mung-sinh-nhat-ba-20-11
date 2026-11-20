@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Flame, Mic, MicOff, RotateCcw, Sparkles } from 'lucide-react';
 import { playCandlePuff, playWishCelebration } from '../utils/musicBox';
 import { useChapterScroll, useScrollProgressJump } from '../utils/useScrollStory';
 
@@ -444,7 +443,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
               {remainingCount > 0 ? (
                 <>
                   <button type="button" className="btn-primary vfx-glow-btn" onClick={blowAllRemaining}>
-                    <Flame size={18} aria-hidden="true" />
                     <span>Thổi Tắt Tất Cả Nến</span>
                   </button>
 
@@ -454,11 +452,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                     onClick={toggleMicrophone}
                     aria-pressed={micActive}
                   >
-                    {micActive ? (
-                      <MicOff size={18} aria-hidden="true" />
-                    ) : (
-                      <Mic size={18} aria-hidden="true" />
-                    )}
                     <span>{micActive ? 'Tắt Micro' : 'Dùng Micro Để Thổi'}</span>
                   </button>
                 </>
@@ -468,7 +461,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
                   className="btn-secondary btn-dark-ghost"
                   onClick={relightCandles}
                 >
-                  <RotateCcw size={18} aria-hidden="true" />
                   <span>Thắp Lại Nến Để Thổi Tiếp</span>
                 </button>
               )}
@@ -487,14 +479,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
 
             {wishRevealed && (
               <div className="wish-reveal-card vfx-foil-card" role="region" aria-live="polite">
-                <h3>
-                  <Sparkles
-                    size={20}
-                    style={{ verticalAlign: 'middle', marginRight: 6 }}
-                    aria-hidden="true"
-                  />
-                  Chúc Mừng Sinh Nhật Bà 20/11!
-                </h3>
+                <h3>Chúc Mừng Sinh Nhật Bà 20/11!</h3>
                 <p>
                   Kính chúc Bà tuổi mới luôn dồi dào sức khỏe, tay chân vững vàng và nụ cười rạng
                   rỡ mỗi sớm mai!

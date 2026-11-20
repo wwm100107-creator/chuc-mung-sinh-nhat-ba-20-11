@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { ChevronDown, Sparkles } from 'lucide-react';
 import { getBirthdayDateInfo } from '../data/birthdayContent';
 import { playWaxSealChime } from '../utils/musicBox';
 import {
@@ -131,7 +130,6 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
         >
           <header className="envelope-header">
             <div className="envelope-date-chip vfx-shimmer-pill">
-              <Sparkles size={15} aria-hidden="true" />
               <span>{dateInfo.badgeText}</span>
             </div>
             <h1 className="envelope-recipient">Kính gửi Bà yêu quý</h1>
@@ -217,13 +215,11 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
               className="btn-primary vfx-glow-btn"
               onClick={handleTapSeal}
             >
-              <Sparkles size={18} aria-hidden="true" />
               <span>Chạm Khai Mở Thiệp &amp; Bật Nhạc</span>
             </button>
 
             <div className="scroll-cue" style={{ opacity: hintFade }}>
               <span>Hoặc vuốt nhẹ lên để mở theo nhịp cuộn</span>
-              <ChevronDown size={18} className="scroll-cue-arrow" aria-hidden="true" />
             </div>
           </div>
         </div>
@@ -299,7 +295,6 @@ export function EnvelopeIntro({ onStartMusic, onBurst }: EnvelopeIntroProps) {
 
             <div className="scroll-cue-strong">
               <span>Tiếp tục cuộn xuống</span>
-              <ChevronDown size={20} className="scroll-cue-arrow" aria-hidden="true" />
             </div>
           </div>
         </div>

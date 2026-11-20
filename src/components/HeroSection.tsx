@@ -1,5 +1,4 @@
 import { useRef } from 'react';
-import { CalendarHeart, Flame, MailOpen, Sparkles } from 'lucide-react';
 import { STORY_BEATS, getBirthdayDateInfo } from '../data/birthdayContent';
 import {
   clamp,
@@ -128,7 +127,6 @@ export function HeroSection() {
                   transform: `translate3d(0, ${(0.5 - progress) * 28}px, 30px)`,
                 }}
               >
-                <Sparkles size={13} aria-hidden="true" />
                 <span>Hương Trà Thu</span>
               </div>
 
@@ -148,7 +146,6 @@ export function HeroSection() {
           {/* 3D Curved Vertical Carousel of Story Beats */}
           <div className="story-content-col">
             <div className="hero-date-pill vfx-shimmer-pill">
-              <CalendarHeart size={16} aria-hidden="true" />
               <span>{dateInfo.badgeText}</span>
             </div>
 
@@ -203,7 +200,6 @@ export function HeroSection() {
                 className="btn-secondary"
                 onClick={() => scrollToChapter('chuong-3-thu-lua', 0.18)}
               >
-                <MailOpen size={17} aria-hidden="true" />
                 <span>Mở Cuộn Thư Lụa</span>
               </button>
               <button
@@ -211,7 +207,6 @@ export function HeroSection() {
                 className="btn-primary vfx-glow-btn"
                 onClick={() => scrollToChapter('chuong-5-thoi-nen', 0.35)}
               >
-                <Flame size={17} aria-hidden="true" />
                 <span>Thổi Nến Sinh Nhật</span>
               </button>
             </div>

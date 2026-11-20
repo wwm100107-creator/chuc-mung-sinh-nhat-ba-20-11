@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Flame, Send, Sparkles } from 'lucide-react';
 import {
   INITIAL_LANTERNS,
   QUICK_WISH_SUGGESTIONS,
@@ -95,7 +94,6 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
       <div className="container">
         <div className="section-heading">
           <div className="section-kicker">
-            <Sparkles size={14} aria-hidden="true" />
             <span>Hồ Hoa Đăng Đêm Thu 20·11</span>
           </div>
           <h2 id="lantern-heading" className="section-title">
@@ -163,11 +161,6 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
           <div className="lantern-spotlight" role="status" aria-live="polite">
             <div>
               <strong style={{ color: '#F6C86E' }}>
-                <Flame
-                  size={16}
-                  style={{ verticalAlign: 'text-bottom', marginRight: 6 }}
-                  aria-hidden="true"
-                />
                 Hoa đăng đang tỏa sáng · Từ {activeLantern.sender}:
               </strong>{' '}
               <span>“{activeLantern.message}”</span>
@@ -227,7 +220,6 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
               {feedback ?? 'Đèn mới sẽ bay lên và tỏa sáng ngay trên mặt hồ kỷ niệm.'}
             </span>
             <button type="submit" className="btn-primary vfx-glow-btn">
-              <Send size={17} aria-hidden="true" />
               <span>Thả Đèn Hoa Đăng</span>
             </button>
           </div>
