@@ -8,15 +8,22 @@ import { FloatingControls } from './components/FloatingControls';
 import { HeroSection } from './components/HeroSection';
 import { LanternRiver } from './components/LanternRiver';
 import { LetterSection } from './components/LetterSection';
+import { CHAPTERS_META } from './data/birthdayContent';
 import { MusicBoxController } from './utils/musicBox';
+import { useGlobalScrollStory } from './utils/useScrollStory';
+
+const CHAPTER_IDS = CHAPTERS_META.map((c) => c.id);
 
 export default function App() {
-  const [opened, setOpened] = useState(false);
   const [largeText, setLargeText] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const canvasRef = useRef<PetalsCanvasHandle | null>(null);
   const musicBox = useMemo(() => new MusicBoxController(), []);
+  const { globalProgress, activeChapterIndex, velocityRef } = useGlobalScrollStory(CHAPTER_IDS);
+
+  // Chapters 5 (BirthdayCake) and 6 (LanternRiver) enter cozy evening & twilight ambiance
+  const nightMode = activeChapterIndex >= 4;
 
   useEffect(() => {
     const unsubscribe = musicBox.subscribe(setIsPlaying);
@@ -38,10 +45,8 @@ export default function App() {
     canvasRef.current?.launchGrandCelebration();
   }, []);
 
-  const handleEnvelopeComplete = useCallback(() => {
-    setOpened(true);
+  const handleStartMusic = useCallback(() => {
     musicBox.start();
-    window.scrollTo({ top: 0, behavior: 'auto' });
   }, [musicBox]);
 
   const handleToggleMusic = useCallback(() => {
@@ -52,39 +57,36 @@ export default function App() {
     setLargeText((prev) => !prev);
   }, []);
 
-  const handleReplayIntro = useCallback(() => {
-    setOpened(false);
+  const handleScrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   return (
     <>
-      <AmbientPetalsCanvas ref={canvasRef} />
+      <AmbientPetalsCanvas ref={canvasRef} velocityRef={velocityRef} nightMode={nightMode} />
+      <FloatingControls
+        globalProgress={globalProgress}
+        activeChapterIndex={activeChapterIndex}
+        nightMode={nightMode}
+        isPlaying={isPlaying}
+        onToggleMusic={handleToggleMusic}
+        largeText={largeText}
+        onToggleLargeText={handleToggleLargeText}
+        onLaunchFireworks={handleGrandCelebrate}
+      />
       <div className="app-shell">
-        {!opened ? (
-          <EnvelopeIntro onComplete={handleEnvelopeComplete} onBurst={handleBurst} />
-        ) : (
-          <>
-            <FloatingControls
-              isPlaying={isPlaying}
-              onToggleMusic={handleToggleMusic}
-              largeText={largeText}
-              onToggleLargeText={handleToggleLargeText}
-              onLaunchFireworks={handleGrandCelebrate}
-            />
-            <main>
-              <HeroSection />
-              <BirthdayCake onGrandCelebrate={handleGrandCelebrate} />
-              <LetterSection />
-              <BlessingsGrid onBurst={handleBurst} />
-              <LanternRiver onBurst={handleBurst} />
-              <FinaleSection
-                onGrandCelebrate={handleGrandCelebrate}
-                onReplayIntro={handleReplayIntro}
-              />
-            </main>
-          </>
-        )}
+        <main>
+          <EnvelopeIntro onStartMusic={handleStartMusic} onBurst={handleBurst} />
+          <HeroSection />
+          <LetterSection />
+          <BlessingsGrid onBurst={handleBurst} />
+          <BirthdayCake onGrandCelebrate={handleGrandCelebrate} />
+          <LanternRiver onBurst={handleBurst} />
+          <FinaleSection
+            onGrandCelebrate={handleGrandCelebrate}
+            onScrollToTop={handleScrollToTop}
+          />
+        </main>
       </div>
     </>
   );

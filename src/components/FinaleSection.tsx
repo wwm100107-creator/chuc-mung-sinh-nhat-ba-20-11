@@ -1,12 +1,12 @@
-import { RotateCcw, Sparkles } from 'lucide-react';
+import { ArrowUp, Sparkles } from 'lucide-react';
 import { CLOSING_POEM } from '../data/birthdayContent';
 
 interface FinaleSectionProps {
   onGrandCelebrate: () => void;
-  onReplayIntro: () => void;
+  onScrollToTop: () => void;
 }
 
-export function FinaleSection({ onGrandCelebrate, onReplayIntro }: FinaleSectionProps) {
+export function FinaleSection({ onGrandCelebrate, onScrollToTop }: FinaleSectionProps) {
   return (
     <section className="finale-section" aria-labelledby="finale-heading">
       <div className="container">
@@ -34,9 +34,9 @@ export function FinaleSection({ onGrandCelebrate, onReplayIntro }: FinaleSection
               <span>Bắn Pháo Hoa Chúc Mừng</span>
             </button>
 
-            <button type="button" className="btn-secondary" onClick={onReplayIntro}>
-              <RotateCcw size={18} aria-hidden="true" />
-              <span>Mở Lại Thiệp Từ Đầu</span>
+            <button type="button" className="btn-secondary" onClick={onScrollToTop}>
+              <ArrowUp size={18} aria-hidden="true" />
+              <span>Cuộn Lên Đầu Trang</span>
             </button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Flame, Mic, MicOff, RotateCcw, Sparkles } from 'lucide-react';
 import { playCandlePuff, playWishCelebration } from '../utils/musicBox';
+import { useChapterScroll, useScrollProgressJump } from '../utils/useScrollStory';
 
 interface BirthdayCakeProps {
   onGrandCelebrate: () => void;
@@ -15,6 +16,10 @@ const CANDLE_POSITIONS = [
 ];
 
 export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
+  const trackRef = useRef<HTMLElement | null>(null);
+  const { progress } = useChapterScroll(trackRef, 0.16);
+  const jumpToProgress = useScrollProgressJump(trackRef);
+
   const [litCandles, setLitCandles] = useState<boolean[]>([true, true, true, true, true]);
   const [smokeTick, setSmokeTick] = useState<number[]>([0, 0, 0, 0, 0]);
   const [wishRevealed, setWishRevealed] = useState(false);
@@ -30,8 +35,11 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
   const micRafRef = useRef<number | null>(null);
   const lastBlowTimeRef = useRef(0);
   const celebrationFiredRef = useRef(false);
+  const scrollAutoBlowTriggeredRef = useRef(false);
 
   const remainingCount = litCandles.filter(Boolean).length;
+  // Scroll lighting progress when entering the chapter
+  const awakeCount = progress < 0.03 ? 1 : Math.min(5, Math.ceil((progress / 0.24) * 5));
 
   const stopMicListener = () => {
     if (micRafRef.current !== null) {
@@ -56,16 +64,6 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
     };
   }, []);
 
-  useEffect(() => {
-    if (remainingCount === 0 && !celebrationFiredRef.current) {
-      celebrationFiredRef.current = true;
-      setWishRevealed(true);
-      playWishCelebration();
-      onGrandCelebrate();
-      stopMicListener();
-    }
-  }, [remainingCount, onGrandCelebrate]);
-
   const extinguishCandle = (index: number) => {
     if (!litRef.current[index]) return;
     playCandlePuff();
@@ -81,15 +79,35 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
     indices.forEach((candleIdx, step) => {
       window.setTimeout(() => {
         extinguishCandle(candleIdx);
-      }, step * 140);
+      }, step * 130);
     });
   };
 
+  // Gentle scroll breeze blows remaining candles when scrolling past 0.85
+  useEffect(() => {
+    if (progress >= 0.86 && remainingCount > 0 && !scrollAutoBlowTriggeredRef.current) {
+      scrollAutoBlowTriggeredRef.current = true;
+      blowAllRemaining();
+    }
+  }, [progress, remainingCount]);
+
+  useEffect(() => {
+    if (remainingCount === 0 && !celebrationFiredRef.current) {
+      celebrationFiredRef.current = true;
+      setWishRevealed(true);
+      playWishCelebration();
+      onGrandCelebrate();
+      stopMicListener();
+    }
+  }, [remainingCount, onGrandCelebrate]);
+
   const relightCandles = () => {
     celebrationFiredRef.current = false;
+    scrollAutoBlowTriggeredRef.current = true;
     setWishRevealed(false);
     setLitCandles([true, true, true, true, true]);
     setMicMessage(null);
+    jumpToProgress(0.42);
   };
 
   const toggleMicrophone = async () => {
@@ -154,276 +172,319 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
       micRafRef.current = window.requestAnimationFrame(detectBlow);
     } catch {
       setMicMessage(
-        'Chưa cấp quyền micro — không sao cả, Bà chạm vào từng ngọn nến hoặc bấm nút bên dưới để thổi nhé ạ.',
+        'Chưa cấp quyền micro — không sao cả, Bà chạm vào từng ngọn nến hoặc bấm nút bên dưới nhé ạ.',
       );
       stopMicListener();
     }
   };
 
   return (
-    <section id="banh-sinh-nhat" className="section-block" aria-labelledby="cake-heading">
-      <div className="container">
-        <div className="section-heading">
-          <div className="section-kicker">Nghi Thức Thổi Nến 20·11</div>
-          <h2 id="cake-heading" className="section-title">
-            Ước Một Điều Thật Bình An, Bà Nhé
-          </h2>
-          <p className="section-desc">
-            Bà nhắm mắt ước một điều thật nhẹ nhàng rồi chạm vào từng ngọn nến — hoặc bấm nút thổi
-            tắt tất cả để gửi điều ước lên bầu trời.
-          </p>
-        </div>
+    <section
+      id="chuong-5-thoi-nen"
+      ref={trackRef}
+      className="scrolly-track track-cake"
+      aria-labelledby="cake-heading"
+    >
+      <div className="sticky-stage cake-sticky-stage">
+        <div className="container cake-stage-inner">
+          <div className="section-heading cake-compact-heading">
+            <div className="section-kicker">Chương 05 · Đêm Nến Ấm 20·11</div>
+            <h2 id="cake-heading" className="section-title">
+              Ước Một Điều Thật Bình An, Bà Nhé
+            </h2>
+            <p className="section-desc">
+              Chạm vào từng ngọn nến, bấm thổi tất cả, dùng micro — hoặc cuộn nhẹ xuống để làn gió
+              thu thổi nến cùng lời chúc.
+            </p>
+          </div>
 
-        <div className="heirloom-card cake-stage">
-          <div className="cake-svg-wrap">
-            <svg
-              viewBox="0 0 420 330"
-              className="cake-svg"
-              role="img"
-              aria-label="Chiếc bánh sinh nhật hai tầng trang trí hoa cúc vàng với năm ngọn nến"
-            >
-              <defs>
-                <radialGradient id="candleGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#FFE89E" stopOpacity="0.85" />
-                  <stop offset="100%" stopColor="#FFE89E" stopOpacity="0" />
-                </radialGradient>
-                <linearGradient id="cakeCreamTop" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#FFFDF7" />
-                  <stop offset="100%" stopColor="#F5E5CB" />
-                </linearGradient>
-                <linearGradient id="cakeCreamBottom" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#FAF0DD" />
-                  <stop offset="100%" stopColor="#ECD2AC" />
-                </linearGradient>
-                <linearGradient id="cakePlatter" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#B87E28" />
-                  <stop offset="50%" stopColor="#F1CA78" />
-                  <stop offset="100%" stopColor="#B87E28" />
-                </linearGradient>
-              </defs>
-
-              {/* Warm pedestal & shadow */}
-              <ellipse cx="210" cy="306" rx="168" ry="16" fill="rgba(72, 43, 24, 0.14)" />
-              <path d="M180 282 L240 282 L254 303 L166 303 Z" fill="url(#cakePlatter)" />
-              <ellipse cx="210" cy="282" rx="164" ry="18" fill="#E8C272" stroke="#B67C27" strokeWidth="2" />
-              <ellipse cx="210" cy="280" rx="146" ry="12" fill="#FFF9EE" />
-
-              {/* Bottom cake tier */}
-              <path
-                d="M78 196 L78 268 C78 282 342 282 342 268 L342 196 Z"
-                fill="url(#cakeCreamBottom)"
-                stroke="#D9B783"
-                strokeWidth="1.5"
-              />
-              {/* Bottom crimson silk ribbon */}
-              <path
-                d="M78 242 C130 256 290 256 342 242 L342 256 C290 270 130 270 78 256 Z"
-                fill="#9B2C2C"
-              />
-              <ellipse cx="210" cy="196" rx="132" ry="16" fill="#FBF2E1" stroke="#DFC08E" strokeWidth="1.2" />
-
-              {/* Frosting scallops on bottom tier */}
-              <path
-                d="M80 198 Q98 220 116 202 Q134 224 154 203 Q174 226 196 204 Q216 226 238 204 Q258 224 278 203 Q298 222 318 201 Q332 215 340 198"
-                fill="#FFFDF8"
-                stroke="#E5C89A"
-                strokeWidth="1.2"
-              />
-
-              {/* Top cake tier */}
-              <path
-                d="M104 128 L104 190 C104 202 316 202 316 190 L316 128 Z"
-                fill="url(#cakeCreamTop)"
-                stroke="#DFC08E"
-                strokeWidth="1.5"
-              />
-              <ellipse cx="210" cy="128" rx="106" ry="14" fill="#FFFDF9" stroke="#E5C89A" strokeWidth="1.5" />
-
-              {/* Chrysanthemum golden dots & tiny blossoms on cake */}
-              {[136, 173, 210, 247, 284].map((cx) => (
-                <g key={`blossom-${cx}`} transform={`translate(${cx}, 168)`}>
-                  <circle r="7.5" fill="#E6B85C" fillOpacity="0.85" />
-                  <circle r="3.2" fill="#9B2C2C" />
-                </g>
-              ))}
-              {[112, 160, 210, 260, 308].map((cx) => (
-                <circle key={`pearl-${cx}`} cx={cx} cy="228" r="4" fill="#E6B85C" />
-              ))}
-
-              {/* Number 20·11 badge on front of cake */}
-              <rect
-                x="176"
-                y="224"
-                width="68"
-                height="30"
-                rx="15"
-                fill="#FFFDF8"
-                stroke="#C88D32"
-                strokeWidth="1.6"
-              />
-              <text
-                x="210"
-                y="244"
-                textAnchor="middle"
-                fill="#9B2C2C"
-                fontFamily="Cormorant Garamond, Georgia, serif"
-                fontWeight="700"
-                fontSize="16"
+          <div className="cake-dark-card">
+            <div className="cake-svg-wrap">
+              <svg
+                viewBox="0 0 420 330"
+                className="cake-svg"
+                role="img"
+                aria-label="Chiếc bánh sinh nhật hai tầng trang trí hoa cúc vàng với năm ngọn nến"
               >
-                20 · 11
-              </text>
+                <defs>
+                  <radialGradient id="candleGlow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#FFE89E" stopOpacity="0.92" />
+                    <stop offset="100%" stopColor="#FFE89E" stopOpacity="0" />
+                  </radialGradient>
+                  <linearGradient id="cakeCreamTop" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#FFFDF7" />
+                    <stop offset="100%" stopColor="#F5E5CB" />
+                  </linearGradient>
+                  <linearGradient id="cakeCreamBottom" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#FAF0DD" />
+                    <stop offset="100%" stopColor="#ECD2AC" />
+                  </linearGradient>
+                  <linearGradient id="cakePlatter" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#B87E28" />
+                    <stop offset="50%" stopColor="#F1CA78" />
+                    <stop offset="100%" stopColor="#B87E28" />
+                  </linearGradient>
+                </defs>
 
-              {/* 5 Interactive Beeswax Candles */}
-              {CANDLE_POSITIONS.map((candle, idx) => {
-                const isLit = litCandles[idx];
-                const smokeCount = smokeTick[idx];
-                return (
-                  <g
-                    key={candle.id}
-                    className="candle-hit"
-                    role="button"
-                    tabIndex={0}
-                    aria-label={
-                      isLit
-                        ? `Ngọn nến số ${idx + 1} đang cháy — bấm để thổi tắt`
-                        : `Ngọn nến số ${idx + 1} đã thổi tắt`
-                    }
-                    onClick={() => extinguishCandle(idx)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        extinguishCandle(idx);
-                      }
-                    }}
-                  >
-                    {/* Generous transparent hit area for senior-friendly tapping */}
-                    <rect x={candle.x - 16} y={candle.y - 52} width="32" height="92" fill="transparent" />
+                {/* Warm pedestal & shadow */}
+                <ellipse cx="210" cy="306" rx="168" ry="16" fill="rgba(0, 0, 0, 0.35)" />
+                <path d="M180 282 L240 282 L254 303 L166 303 Z" fill="url(#cakePlatter)" />
+                <ellipse
+                  cx="210"
+                  cy="282"
+                  rx="164"
+                  ry="18"
+                  fill="#E8C272"
+                  stroke="#B67C27"
+                  strokeWidth="2"
+                />
+                <ellipse cx="210" cy="280" rx="146" ry="12" fill="#FFF9EE" />
 
-                    {/* Candle wax body */}
-                    <rect
-                      x={candle.x - 6}
-                      y={candle.y - 2}
-                      width="12"
-                      height="34"
-                      rx="3"
-                      fill={candle.bodyColor}
-                      stroke="#9F6B1E"
-                      strokeWidth="1"
-                      className="candle-body-outline"
-                    />
-                    <path
-                      d={`M${candle.x - 6} ${candle.y + 10} L${candle.x + 6} ${candle.y + 4}`}
-                      stroke={candle.stripeColor}
-                      strokeWidth="2"
-                      strokeOpacity="0.65"
-                    />
-                    <path
-                      d={`M${candle.x - 6} ${candle.y + 22} L${candle.x + 6} ${candle.y + 16}`}
-                      stroke={candle.stripeColor}
-                      strokeWidth="2"
-                      strokeOpacity="0.65"
-                    />
+                {/* Bottom cake tier */}
+                <path
+                  d="M78 196 L78 268 C78 282 342 282 342 268 L342 196 Z"
+                  fill="url(#cakeCreamBottom)"
+                  stroke="#D9B783"
+                  strokeWidth="1.5"
+                />
+                <path
+                  d="M78 242 C130 256 290 256 342 242 L342 256 C290 270 130 270 78 256 Z"
+                  fill="#9B2C2C"
+                />
+                <ellipse
+                  cx="210"
+                  cy="196"
+                  rx="132"
+                  ry="16"
+                  fill="#FBF2E1"
+                  stroke="#DFC08E"
+                  strokeWidth="1.2"
+                />
 
-                    {/* Wick */}
-                    <line
-                      x1={candle.x}
-                      y1={candle.y - 2}
-                      x2={candle.x}
-                      y2={candle.y - 9}
-                      stroke="#3A281E"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
+                {/* Frosting scallops */}
+                <path
+                  d="M80 198 Q98 220 116 202 Q134 224 154 203 Q174 226 196 204 Q216 226 238 204 Q258 224 278 203 Q298 222 318 201 Q332 215 340 198"
+                  fill="#FFFDF8"
+                  stroke="#E5C89A"
+                  strokeWidth="1.2"
+                />
 
-                    {/* Warm flame or rising puff of smoke */}
-                    {isLit ? (
-                      <g>
-                        <circle cx={candle.x} cy={candle.y - 22} r="22" fill="url(#candleGlow)" />
-                        <path
-                          className="flame-outer"
-                          d={`M${candle.x} ${candle.y - 38} C${candle.x + 8} ${candle.y - 26}, ${candle.x + 7} ${candle.y - 12}, ${candle.x} ${candle.y - 10} C${candle.x - 7} ${candle.y - 12}, ${candle.x - 8} ${candle.y - 26}, ${candle.x} ${candle.y - 38} Z`}
-                          fill="#F59E0B"
-                        />
-                        <path
-                          className="flame-inner"
-                          d={`M${candle.x} ${candle.y - 30} C${candle.x + 4} ${candle.y - 22}, ${candle.x + 4} ${candle.y - 14}, ${candle.x} ${candle.y - 12} C${candle.x - 4} ${candle.y - 14}, ${candle.x - 4} ${candle.y - 22}, ${candle.x} ${candle.y - 30} Z`}
-                          fill="#FFF6CC"
-                        />
-                      </g>
-                    ) : (
-                      smokeCount > 0 && (
-                        <path
-                          key={`smoke-${candle.id}-${smokeCount}`}
-                          className="candle-smoke"
-                          d={`M${candle.x} ${candle.y - 10} C${candle.x - 5} ${candle.y - 20}, ${candle.x + 6} ${candle.y - 28}, ${candle.x - 2} ${candle.y - 38}`}
-                          fill="none"
-                          stroke="#8E7968"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      )
-                    )}
+                {/* Top cake tier */}
+                <path
+                  d="M104 128 L104 190 C104 202 316 202 316 190 L316 128 Z"
+                  fill="url(#cakeCreamTop)"
+                  stroke="#DFC08E"
+                  strokeWidth="1.5"
+                />
+                <ellipse
+                  cx="210"
+                  cy="128"
+                  rx="106"
+                  ry="14"
+                  fill="#FFFDF9"
+                  stroke="#E5C89A"
+                  strokeWidth="1.5"
+                />
+
+                {[136, 173, 210, 247, 284].map((cx) => (
+                  <g key={`blossom-${cx}`} transform={`translate(${cx}, 168)`}>
+                    <circle r="7.5" fill="#E6B85C" fillOpacity="0.85" />
+                    <circle r="3.2" fill="#9B2C2C" />
                   </g>
-                );
-              })}
-            </svg>
-          </div>
+                ))}
+                {[112, 160, 210, 260, 308].map((cx) => (
+                  <circle key={`pearl-${cx}`} cx={cx} cy="228" r="4" fill="#E6B85C" />
+                ))}
 
-          <div className="cake-progress-text" role="status" aria-live="polite">
-            {remainingCount > 0
-              ? `Còn ${remainingCount} / 5 ngọn nến đang lung linh — chạm từng ngọn hoặc bấm thổi tất cả`
-              : 'Cả 5 ngọn nến đều đã thổi tắt! Điều ước bình an đã sáng rực'}
-          </div>
+                {/* 20·11 badge */}
+                <rect
+                  x="176"
+                  y="224"
+                  width="68"
+                  height="30"
+                  rx="15"
+                  fill="#FFFDF8"
+                  stroke="#C88D32"
+                  strokeWidth="1.6"
+                />
+                <text
+                  x="210"
+                  y="244"
+                  textAnchor="middle"
+                  fill="#9B2C2C"
+                  fontFamily="Cormorant Garamond, Georgia, serif"
+                  fontWeight="700"
+                  fontSize="16"
+                >
+                  20 · 11
+                </text>
 
-          <div className="cake-controls">
-            {remainingCount > 0 ? (
-              <>
-                <button type="button" className="btn-primary" onClick={blowAllRemaining}>
-                  <Flame size={18} aria-hidden="true" />
-                  <span>Thổi Tắt Tất Cả Nến</span>
-                </button>
+                {/* 5 Interactive Beeswax Candles */}
+                {CANDLE_POSITIONS.map((candle, idx) => {
+                  const isLit = litCandles[idx] && idx < awakeCount;
+                  const smokeCount = smokeTick[idx];
+                  return (
+                    <g
+                      key={candle.id}
+                      className="candle-hit"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={
+                        litCandles[idx]
+                          ? `Ngọn nến số ${idx + 1} đang cháy — bấm để thổi tắt`
+                          : `Ngọn nến số ${idx + 1} đã thổi tắt`
+                      }
+                      onClick={() => extinguishCandle(idx)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          extinguishCandle(idx);
+                        }
+                      }}
+                    >
+                      <rect
+                        x={candle.x - 18}
+                        y={candle.y - 54}
+                        width="36"
+                        height="94"
+                        fill="transparent"
+                      />
 
+                      <rect
+                        x={candle.x - 6}
+                        y={candle.y - 2}
+                        width="12"
+                        height="34"
+                        rx="3"
+                        fill={candle.bodyColor}
+                        stroke="#9F6B1E"
+                        strokeWidth="1"
+                        className="candle-body-outline"
+                      />
+                      <path
+                        d={`M${candle.x - 6} ${candle.y + 10} L${candle.x + 6} ${candle.y + 4}`}
+                        stroke={candle.stripeColor}
+                        strokeWidth="2"
+                        strokeOpacity="0.65"
+                      />
+                      <path
+                        d={`M${candle.x - 6} ${candle.y + 22} L${candle.x + 6} ${candle.y + 16}`}
+                        stroke={candle.stripeColor}
+                        strokeWidth="2"
+                        strokeOpacity="0.65"
+                      />
+
+                      <line
+                        x1={candle.x}
+                        y1={candle.y - 2}
+                        x2={candle.x}
+                        y2={candle.y - 9}
+                        stroke="#3A281E"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+
+                      {isLit ? (
+                        <g>
+                          <circle cx={candle.x} cy={candle.y - 22} r="24" fill="url(#candleGlow)" />
+                          <path
+                            className="flame-outer"
+                            d={`M${candle.x} ${candle.y - 38} C${candle.x + 8} ${candle.y - 26}, ${candle.x + 7} ${candle.y - 12}, ${candle.x} ${candle.y - 10} C${candle.x - 7} ${candle.y - 12}, ${candle.x - 8} ${candle.y - 26}, ${candle.x} ${candle.y - 38} Z`}
+                            fill="#F59E0B"
+                          />
+                          <path
+                            className="flame-inner"
+                            d={`M${candle.x} ${candle.y - 30} C${candle.x + 4} ${candle.y - 22}, ${candle.x + 4} ${candle.y - 14}, ${candle.x} ${candle.y - 12} C${candle.x - 4} ${candle.y - 14}, ${candle.x - 4} ${candle.y - 22}, ${candle.x} ${candle.y - 30} Z`}
+                            fill="#FFF6CC"
+                          />
+                        </g>
+                      ) : (
+                        smokeCount > 0 && (
+                          <path
+                            key={`smoke-${candle.id}-${smokeCount}`}
+                            className="candle-smoke"
+                            d={`M${candle.x} ${candle.y - 10} C${candle.x - 5} ${candle.y - 20}, ${candle.x + 6} ${candle.y - 28}, ${candle.x - 2} ${candle.y - 38}`}
+                            fill="none"
+                            stroke="#D4C2B2"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        )
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            <div className="cake-progress-text cake-progress-dark" role="status" aria-live="polite">
+              {remainingCount > 0
+                ? `Còn ${remainingCount} / 5 ngọn nến đang lung linh`
+                : 'Cả 5 ngọn nến đã tắt! Điều ước bình an đã gửi tới bầu trời'}
+            </div>
+
+            <div className="cake-controls">
+              {remainingCount > 0 ? (
+                <>
+                  <button type="button" className="btn-primary" onClick={blowAllRemaining}>
+                    <Flame size={18} aria-hidden="true" />
+                    <span>Thổi Tắt Tất Cả Nến</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-secondary btn-dark-ghost"
+                    onClick={toggleMicrophone}
+                    aria-pressed={micActive}
+                  >
+                    {micActive ? (
+                      <MicOff size={18} aria-hidden="true" />
+                    ) : (
+                      <Mic size={18} aria-hidden="true" />
+                    )}
+                    <span>{micActive ? 'Tắt Micro' : 'Dùng Micro'}</span>
+                  </button>
+                </>
+              ) : (
                 <button
                   type="button"
-                  className="btn-secondary"
-                  onClick={toggleMicrophone}
-                  aria-pressed={micActive}
+                  className="btn-secondary btn-dark-ghost"
+                  onClick={relightCandles}
                 >
-                  {micActive ? <MicOff size={18} aria-hidden="true" /> : <Mic size={18} aria-hidden="true" />}
-                  <span>{micActive ? 'Tắt Micro' : 'Dùng Micro Để Thổi'}</span>
+                  <RotateCcw size={18} aria-hidden="true" />
+                  <span>Thắp Lại Nến Để Thổi Tiếp</span>
                 </button>
-              </>
-            ) : (
-              <button type="button" className="btn-secondary" onClick={relightCandles}>
-                <RotateCcw size={18} aria-hidden="true" />
-                <span>Thắp Lại Nến Để Thổi Tiếp</span>
-              </button>
+              )}
+            </div>
+
+            {micActive && remainingCount > 0 && (
+              <div className="mic-meter-box">
+                <div>Bà thổi nhẹ vào micro nhé:</div>
+                <div className="mic-meter-track" aria-hidden="true">
+                  <div className="mic-meter-fill" style={{ width: `${micLevel}%` }} />
+                </div>
+              </div>
+            )}
+
+            {micMessage && <p className="mic-note-dark">{micMessage}</p>}
+
+            {wishRevealed && (
+              <div className="wish-reveal-card" role="region" aria-live="polite">
+                <h3>
+                  <Sparkles
+                    size={20}
+                    style={{ verticalAlign: 'middle', marginRight: 6 }}
+                    aria-hidden="true"
+                  />
+                  Chúc Mừng Sinh Nhật Bà 20/11!
+                </h3>
+                <p>
+                  Kính chúc Bà tuổi mới luôn dồi dào sức khỏe, tay chân vững vàng và nụ cười rạng
+                  rỡ mỗi sớm mai!
+                </p>
+              </div>
             )}
           </div>
-
-          {micActive && remainingCount > 0 && (
-            <div className="mic-meter-box">
-              <div>Bà thổi nhẹ vào micro nhé — hơi thổi mạnh sẽ thổi tắt nến:</div>
-              <div className="mic-meter-track" aria-hidden="true">
-                <div className="mic-meter-fill" style={{ width: `${micLevel}%` }} />
-              </div>
-            </div>
-          )}
-
-          {micMessage && <p className="mic-note">{micMessage}</p>}
-
-          {wishRevealed && (
-            <div className="wish-reveal-card" role="region" aria-live="polite">
-              <h3>
-                <Sparkles size={20} style={{ verticalAlign: 'middle', marginRight: 6 }} aria-hidden="true" />
-                Chúc Mừng Sinh Nhật Bà 20/11!
-              </h3>
-              <p>
-                Ước nguyện của Bà đã được gửi tới bầu trời thu êm dịu. Kính chúc Bà tuổi mới luôn
-                dồi dào sức khỏe, tay chân vững vàng, nụ cười rạng rỡ mỗi sớm mai!
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </section>

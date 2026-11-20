@@ -73,7 +73,7 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
 
   return (
     <section
-      id="tha-den-hoa-dang"
+      id="chuong-6-hoa-dang"
       className="lantern-pavilion"
       aria-labelledby="lantern-heading"
     >
@@ -87,16 +87,17 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
 
       <div className="container">
         <div className="section-heading">
-          <div className="section-kicker">Đêm Hoa Đăng 20·11</div>
+          <div className="section-kicker">Chương 06 · Đêm Hoa Đăng 20·11</div>
           <h2 id="lantern-heading" className="section-title">
             Thả Đèn Hoa Đăng Gửi Lời Chúc Tới Bà
           </h2>
           <p className="section-desc">
-            Mỗi ngọn hoa đăng là một lời nguyện cầu bình an. Cả nhà và bạn bè có thể viết thêm lời
-            chúc để thắp sáng dòng nước kỷ niệm sinh nhật Bà.
+            Vuốt ngang hoặc chạm từng ngọn đèn để đọc lời nguyện cầu bình an, và thả thêm đèn hoa
+            đăng từ con cháu.
           </p>
         </div>
 
+        {/* Horizontal snap carousel on mobile, clean grid on desktop */}
         <div className="lantern-pond-stage">
           {lanterns.map((lantern) => {
             const isSelected = lantern.id === activeLantern?.id;
@@ -136,7 +137,11 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
           <div className="lantern-spotlight" role="status" aria-live="polite">
             <div>
               <strong style={{ color: '#F6C86E' }}>
-                <Flame size={16} style={{ verticalAlign: 'text-bottom', marginRight: 6 }} aria-hidden="true" />
+                <Flame
+                  size={16}
+                  style={{ verticalAlign: 'text-bottom', marginRight: 6 }}
+                  aria-hidden="true"
+                />
                 Đèn đang sáng · Từ {activeLantern.sender}:
               </strong>{' '}
               <span>“{activeLantern.message}”</span>
@@ -147,7 +152,7 @@ export function LanternRiver({ onBurst }: LanternRiverProps) {
         <form className="lantern-form-card" onSubmit={handleReleaseLantern}>
           <h3 className="lantern-form-title">Viết Lời Chúc &amp; Thả Thêm Một Ngọn Đèn</h3>
           <p style={{ margin: 0, color: 'var(--sepia)', fontSize: '0.96rem' }}>
-            Chọn nhanh một câu chúc gợi ý bên dưới hoặc tự viết lời nhắn gửi Bà:
+            Chạm nhanh một câu chúc gợi ý hoặc tự viết lời nhắn gửi Bà:
           </p>
 
           <div className="quick-chips">

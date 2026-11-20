@@ -31,6 +31,50 @@ export function getBirthdayDateInfo(now: Date = new Date()): BirthdayDateInfo {
   };
 }
 
+export interface ChapterMeta {
+  id: string;
+  num: string;
+  shortLabel: string;
+  fullLabel: string;
+}
+
+export const CHAPTERS_META: ChapterMeta[] = [
+  { id: 'chuong-1-mo-thiep', num: '01', shortLabel: 'Mở thiệp', fullLabel: '01 Mở Thiệp' },
+  { id: 'chuong-2-huong-tra', num: '02', shortLabel: 'Hương trà', fullLabel: '02 Hương Trà' },
+  { id: 'chuong-3-thu-lua', num: '03', shortLabel: 'Thư lụa', fullLabel: '03 Thư Lụa' },
+  { id: 'chuong-4-loi-chuc', num: '04', shortLabel: 'Lời chúc', fullLabel: '04 Lời Chúc' },
+  { id: 'chuong-5-thoi-nen', num: '05', shortLabel: 'Thổi nến', fullLabel: '05 Thổi Nến' },
+  { id: 'chuong-6-hoa-dang', num: '06', shortLabel: 'Hoa đăng', fullLabel: '06 Hoa Đăng' },
+];
+
+export interface StoryBeat {
+  id: string;
+  kicker: string;
+  title: string;
+  body: string;
+}
+
+export const STORY_BEATS: StoryBeat[] = [
+  {
+    id: 'beat-1',
+    kicker: 'Nhịp 01 · Sắc Thu Tháng Mười Một',
+    title: 'Nắng Vàng Ghé Hiên Nhà',
+    body: 'Cứ mỗi độ 20 tháng 11 về, gió thu se lạnh lại mang theo hương cúc vàng và những buổi sớm bình yên bên ấm trà nóng của Bà.',
+  },
+  {
+    id: 'beat-2',
+    kicker: 'Nhịp 02 · Hơi Ấm Gia Đình',
+    title: 'Bàn Tay Tảo Tần Thương Yêu',
+    body: 'Từ bữa cơm nóng hổi đến lời dặn dò nhẹ nhàng khi trở trời, sự dịu dàng của Bà luôn là mái nhà êm nhất cho con cháu tìm về.',
+  },
+  {
+    id: 'beat-3',
+    kicker: 'Nhịp 03 · Kính Chúc Tuổi Mới',
+    title: 'An Nhiên & Trường Thọ',
+    body: 'Cháu kính chúc Bà thêm một tuổi mới thật khỏe mạnh, lòng thanh thản như tách trà sớm và luôn rạng rỡ tiếng cười bên con cháu.',
+  },
+];
+
 export const LETTER_CONTENT = {
   salutation: 'Kính gửi Bà yêu quý của cháu,',
   paragraphs: [
@@ -57,7 +101,7 @@ export const BLESSINGS_LIST: BlessingItem[] = [
     id: 'binh-an',
     sealLabel: 'Chữ An',
     title: 'Bình An Mỗi Ngày',
-    subtitle: 'Chạm để mở lời chúc',
+    subtitle: 'Cuộn hoặc chạm để mở',
     message:
       'Chúc Bà sớm hôm thư thái, tâm hồn nhẹ nhàng như tách trà ấm buổi sáng, mọi muộn phiền đều tan biến theo gió thu.',
     accent: 'crimson',
@@ -66,7 +110,7 @@ export const BLESSINGS_LIST: BlessingItem[] = [
     id: 'suc-khoe',
     sealLabel: 'Chữ Khang',
     title: 'Sức Khỏe Dồi Dào',
-    subtitle: 'Chạm để mở lời chúc',
+    subtitle: 'Cuộn hoặc chạm để mở',
     message:
       'Mong Bà luôn mạnh khỏe, bước chân vững vàng, ăn cơm thật ngon miệng và ngủ một giấc thật sâu mỗi tối.',
     accent: 'tea',
@@ -75,7 +119,7 @@ export const BLESSINGS_LIST: BlessingItem[] = [
     id: 'truong-tho',
     sealLabel: 'Chữ Thọ',
     title: 'Phúc Thọ Trường Tồn',
-    subtitle: 'Chạm để mở lời chúc',
+    subtitle: 'Cuộn hoặc chạm để mở',
     message:
       'Chúc Bà phúc như Đông Hải, thọ tỷ Nam Sơn — mái tóc bạc vẫn rạng ngời bên con cháu qua thật nhiều mùa hoa cúc nở.',
     accent: 'gold',
@@ -84,7 +128,7 @@ export const BLESSINGS_LIST: BlessingItem[] = [
     id: 'niem-vui',
     sealLabel: 'Chữ Hỷ',
     title: 'Tiếng Cười Rạng Rỡ',
-    subtitle: 'Chạm để mở lời chúc',
+    subtitle: 'Cuộn hoặc chạm để mở',
     message:
       'Mong nụ cười hiền từ của Bà luôn nở trên môi mỗi ngày, để niềm vui nho nhỏ luôn gõ cửa hiên nhà.',
     accent: 'crimson',
@@ -93,7 +137,7 @@ export const BLESSINGS_LIST: BlessingItem[] = [
     id: 'sum-vay',
     sealLabel: 'Chữ Hòa',
     title: 'Gia Đình Sum Vầy',
-    subtitle: 'Chạm để mở lời chúc',
+    subtitle: 'Cuộn hoặc chạm để mở',
     message:
       'Chúc ngôi nhà của Bà luôn rộn rã tiếng trò chuyện, mỗi dịp lễ Tết hay cuối tuần con cháu lại quây quần đông đủ.',
     accent: 'tea',
@@ -102,7 +146,7 @@ export const BLESSINGS_LIST: BlessingItem[] = [
     id: 'am-ap',
     sealLabel: 'Chữ Phúc',
     title: 'Trọn Vẹn Yêu Thương',
-    subtitle: 'Chạm để mở lời chúc',
+    subtitle: 'Cuộn hoặc chạm để mở',
     message:
       'Bà là kho báu lớn nhất của cả gia đình. Chúc Bà luôn cảm nhận được tình thương yêu ấm áp từ tất cả con cháu.',
     accent: 'gold',
