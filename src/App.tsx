@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { AmbientPetalsCanvas, type PetalsCanvasHandle } from './components/AmbientPetalsCanvas';
 import { BirthdayCake } from './components/BirthdayCake';
 import { BlessingsGrid } from './components/BlessingsGrid';
@@ -15,9 +15,6 @@ import { useGlobalScrollStory } from './utils/useScrollStory';
 const CHAPTER_IDS = CHAPTERS_META.map((c) => c.id);
 
 export default function App() {
-  const [largeText, setLargeText] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-
   const canvasRef = useRef<PetalsCanvasHandle | null>(null);
   const musicBox = useMemo(() => new MusicBoxController(), []);
   const { globalProgress, activeChapterIndex, velocityRef } = useGlobalScrollStory(CHAPTER_IDS);
@@ -26,16 +23,10 @@ export default function App() {
   const nightMode = activeChapterIndex >= 4;
 
   useEffect(() => {
-    const unsubscribe = musicBox.subscribe(setIsPlaying);
     return () => {
-      unsubscribe();
       musicBox.dispose();
     };
   }, [musicBox]);
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-large-text', largeText ? 'true' : 'false');
-  }, [largeText]);
 
   const handleBurst = useCallback((x?: number, y?: number) => {
     canvasRef.current?.launchBurst(x, y);
@@ -49,14 +40,6 @@ export default function App() {
     musicBox.start();
   }, [musicBox]);
 
-  const handleToggleMusic = useCallback(() => {
-    musicBox.toggle();
-  }, [musicBox]);
-
-  const handleToggleLargeText = useCallback(() => {
-    setLargeText((prev) => !prev);
-  }, []);
-
   const handleScrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -68,11 +51,6 @@ export default function App() {
         globalProgress={globalProgress}
         activeChapterIndex={activeChapterIndex}
         nightMode={nightMode}
-        isPlaying={isPlaying}
-        onToggleMusic={handleToggleMusic}
-        largeText={largeText}
-        onToggleLargeText={handleToggleLargeText}
-        onLaunchFireworks={handleGrandCelebrate}
       />
       <div className="app-shell">
         <main>
