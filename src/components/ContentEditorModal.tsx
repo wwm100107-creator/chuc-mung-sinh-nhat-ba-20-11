@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSiteContent } from '../context/ContentContext';
 
 type EditorTab = 'all' | 'envelope' | 'story' | 'letter' | 'blessings' | 'cake' | 'finale';
@@ -19,14 +19,30 @@ export function ContentEditorModal() {
     updateContent,
     resetContent,
     createShareableGiftUrl,
-    isGiftViewMode,
   } = useSiteContent();
 
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<EditorTab>('all');
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
 
-  if (isGiftViewMode) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S' || e.code === 'KeyS')) {
+        e.preventDefault();
+        e.stopPropagation();
+        setOpen((prev) => !prev);
+      } else if (e.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+    };
+  }, []);
+
+  if (!open) {
     return null;
   }
 
@@ -34,7 +50,7 @@ export function ContentEditorModal() {
     const url = createShareableGiftUrl();
     try {
       await navigator.clipboard.writeText(url);
-      setCopyStatus('Đã sao chép link gửi tặng Bà (đã lưu chữ mới & ẩn nút sửa)!');
+      setCopyStatus('Đã sao chép link gửi tặng Bà!');
     } catch {
       window.prompt('Sao chép đường link này để gửi tặng Bà:', url);
       setCopyStatus('Đã tạo link gửi tặng Bà!');
@@ -50,42 +66,36 @@ export function ContentEditorModal() {
   const showFinale = activeTab === 'all' || activeTab === 'finale';
 
   return (
-    <>
-      <button
-        type="button"
-        className="content-editor-fab"
-        onClick={() => setOpen(true)}
-        aria-label="Mở bảng chỉnh sửa nội dung câu chữ toàn trang"
-      >
-        <span>Sửa câu chữ</span>
-      </button>
-
-      {open && (
-        <div
-          className="editor-backdrop"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="editor-dialog-title"
-        >
-          <div className="storybook-sheet editor-modal">
-            <header className="editor-header">
-              <div>
-                <h2 id="editor-dialog-title" className="editor-title">
-                  Chỉnh Sửa Toàn Bộ Câu Chữ Trên Trang (100% Các Mục)
-                </h2>
-                <p className="editor-subtitle">
-                  Cuộn xuống để sửa mọi tiêu đề, nhãn, con dấu, đoạn thư, lời chúc, đèn hoa đăng và thơ kết. Thay đổi tự động lưu ngay lập tức.
-                </p>
-              </div>
-              <button
-                type="button"
-                className="editor-close-btn"
-                onClick={() => setOpen(false)}
-                aria-label="Đóng bảng chỉnh sửa"
-              >
-                Đóng ✕
-              </button>
-            </header>
+    <div
+      className="editor-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="editor-dialog-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          setOpen(false);
+        }
+      }}
+    >
+      <div className="storybook-sheet editor-modal">
+        <header className="editor-header">
+          <div>
+            <h2 id="editor-dialog-title" className="editor-title">
+              Chỉnh Sửa Toàn Bộ Câu Chữ Trên Trang (Ctrl + S)
+            </h2>
+            <p className="editor-subtitle">
+              Cuộn xuống để sửa mọi tiêu đề, nhãn, con dấu, đoạn thư, lời chúc, đèn hoa đăng và thơ kết. Ấn Ctrl + S, phím Esc hoặc nút Đóng để ẩn bảng sửa.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="editor-close-btn"
+            onClick={() => setOpen(false)}
+            aria-label="Đóng bảng chỉnh sửa"
+          >
+            Đóng ✕
+          </button>
+        </header>
 
             <nav className="editor-tabs" aria-label="Lọc theo chương cần sửa">
               {TABS.map((t) => (
@@ -1198,16 +1208,14 @@ export function ContentEditorModal() {
 
               <div className="editor-footer-right">
                 <button type="button" className="btn-secondary" onClick={handleCopyGiftLink}>
-                  Sao Chép Link Gửi Bà (Ẩn Nút Sửa)
+                  Sao Chép Link Gửi Bà
                 </button>
                 <button type="button" className="btn-primary" onClick={() => setOpen(false)}>
-                  Xong &amp; Xem Trang
+                  Xong &amp; Ẩn Bảng Sửa
                 </button>
               </div>
             </footer>
           </div>
         </div>
-      )}
-    </>
   );
 }
