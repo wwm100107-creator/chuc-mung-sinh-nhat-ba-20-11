@@ -117,8 +117,8 @@ export function LetterSection() {
               className={`letter-seal-mark scroll-stamp ${sealStamped ? 'is-stamped' : ''}`}
               aria-hidden="true"
             >
-              <span>20</span>
-              <span>Th11</span>
+              <span>{content.letter.sealTop}</span>
+              <span>{content.letter.sealBottom}</span>
             </div>
 
             <h2 id="letter-heading" className="letter-salutation">

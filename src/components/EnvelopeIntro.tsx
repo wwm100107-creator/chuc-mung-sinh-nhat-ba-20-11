@@ -90,7 +90,7 @@ export function EnvelopeIntro({ onBurst }: EnvelopeIntroProps) {
 
           <div className="envelope-cta-row">
             <div className="scroll-cue" style={{ opacity: hintFade }}>
-              <span>Vuốt nhẹ lên để lật mở từng trang</span>
+              <span>{content.envelope.scrollHint1}</span>
             </div>
           </div>
         </div>
@@ -128,7 +128,7 @@ export function EnvelopeIntro({ onBurst }: EnvelopeIntroProps) {
             <p className="welcome-desc">{content.envelope.welcomeDescription}</p>
 
             <div className="scroll-cue-strong">
-              <span>Vuốt tiếp xuống để thưởng trà &amp; đọc thư</span>
+              <span>{content.envelope.scrollHint2}</span>
             </div>
           </div>
         </div>

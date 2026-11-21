@@ -28,19 +28,25 @@ export interface EditableStoryBeat {
 
 export interface SiteContent {
   envelope: {
+    pageTitle: string;
     dateBadge: string;
     recipientTitle: string;
     envelopeSubtitle: string;
+    scrollHint1: string;
     welcomeBadge: string;
     welcomeTitleTop: string;
     welcomeTitleHighlight: string;
     welcomeDescription: string;
+    scrollHint2: string;
   };
   story: {
+    topBadge: string;
     paintingCaption: string;
     beats: EditableStoryBeat[];
   };
   letter: {
+    sealTop: string;
+    sealBottom: string;
     salutation: string;
     paragraphs: string[];
     closing: string;
@@ -49,8 +55,12 @@ export interface SiteContent {
   blessings: {
     sectionKicker: string;
     sectionTitle: string;
+    sectionDesc: string;
+    cardBadgePrefix: string;
+    cardFooterHint: string;
     items: BlessingItem[];
     secretGift: {
+      wreathCenterLabel: string;
       badge: string;
       title: string;
       message: string;
@@ -68,6 +78,7 @@ export interface SiteContent {
     lanternTitle: string;
     lanternDesc: string;
     lanterns: LanternWish[];
+    finaleSealText: string;
     finaleKicker: string;
     finaleTitle: string;
     poemLines: string[];
@@ -75,25 +86,31 @@ export interface SiteContent {
   };
 }
 
-const STORAGE_KEY = 'snvv-ba-editable-content-v3';
+const STORAGE_KEY = 'snvv-ba-editable-content-v4';
 
 export function getDefaultSiteContent(): SiteContent {
   const dateInfo = getBirthdayDateInfo();
   return {
     envelope: {
+      pageTitle: 'Chúc Mừng Sinh Nhật Bà Yêu Quý - 20/11',
       dateBadge: dateInfo.badgeText,
       recipientTitle: 'Kính gửi Bà yêu quý',
       envelopeSubtitle: 'Vuốt nhẹ trang giấy để lật mở từng chương kỷ niệm',
+      scrollHint1: 'Vuốt nhẹ lên để lật mở từng trang',
       welcomeBadge: 'Ngày Sinh Nhật Đặc Biệt · 20 Tháng 11',
       welcomeTitleTop: 'Chúc Mừng Sinh Nhật',
       welcomeTitleHighlight: 'Bà Yêu Quý',
       welcomeDescription: `${dateInfo.subStatusText}. Mỗi trang giấy màu nước tiếp theo là một lời chúc bình an con cháu vẽ dành tặng riêng Bà.`,
+      scrollHint2: 'Vuốt tiếp xuống để thưởng trà & đọc thư',
     },
     story: {
+      topBadge: dateInfo.badgeText,
       paintingCaption: 'Hương trà thu · Sắc cúc vàng ngày 20 tháng 11',
       beats: STORY_BEATS.map((b) => ({ ...b })),
     },
     letter: {
+      sealTop: '20',
+      sealBottom: 'Th11',
       salutation: LETTER_CONTENT.salutation,
       paragraphs: [...LETTER_CONTENT.paragraphs],
       closing: LETTER_CONTENT.closing,
@@ -102,8 +119,14 @@ export function getDefaultSiteContent(): SiteContent {
     blessings: {
       sectionKicker: 'Vòng Hoa Cúc Mùa Thu Chúc Thọ',
       sectionTitle: 'Sáu Lời Chúc Vàng & Món Quà Thứ Bảy',
+      sectionDesc: 'Cuộn nhẹ trang giấy để xoay vòng hoa cúc và lật mở từng tấm thiệp chúc thọ.',
+      cardBadgePrefix: 'Lời chúc',
+      cardFooterHint: 'Cuộn nhẹ xuống để lật mở lời chúc tiếp theo',
       items: BLESSINGS_LIST.map((item) => ({ ...item })),
-      secretGift: { ...SECRET_SEVENTH_BLESSING },
+      secretGift: {
+        wreathCenterLabel: 'Món Quà 7',
+        ...SECRET_SEVENTH_BLESSING,
+      },
     },
     cake: {
       sectionKicker: 'Chiếc Bánh Kem Hoa Cúc Mùa Thu 20·11',
@@ -119,11 +142,45 @@ export function getDefaultSiteContent(): SiteContent {
       lanternTitle: 'Đèn Hoa Đăng Cầu Phúc Thọ Bình An',
       lanternDesc: 'Những ngọn hoa đăng mang lời nguyện cầu sức khỏe và bình an từ con cháu.',
       lanterns: INITIAL_LANTERNS.map((l) => ({ ...l })),
+      finaleSealText: '20·11',
       finaleKicker: 'Lời Thơ Kết Kính Dâng Bà',
       finaleTitle: 'Mãi Khỏe Mạnh & An Nhiên, Bà Nhé',
       poemLines: [...CLOSING_POEM],
       footerText:
         'Tấm thiệp màu nước kỷ niệm ngày sinh nhật Bà 20 tháng 11 · Làm bằng trọn vẹn yêu thương từ con cháu',
+    },
+  };
+}
+
+function mergeWithDefaults(parsed: Partial<SiteContent>): SiteContent {
+  const def = getDefaultSiteContent();
+  return {
+    envelope: { ...def.envelope, ...(parsed.envelope ?? {}) },
+    story: {
+      ...def.story,
+      ...(parsed.story ?? {}),
+      beats: parsed.story?.beats?.length ? parsed.story.beats : def.story.beats,
+    },
+    letter: {
+      ...def.letter,
+      ...(parsed.letter ?? {}),
+      paragraphs: parsed.letter?.paragraphs?.length ? parsed.letter.paragraphs : def.letter.paragraphs,
+    },
+    blessings: {
+      ...def.blessings,
+      ...(parsed.blessings ?? {}),
+      items: parsed.blessings?.items?.length ? parsed.blessings.items : def.blessings.items,
+      secretGift: {
+        ...def.blessings.secretGift,
+        ...(parsed.blessings?.secretGift ?? {}),
+      },
+    },
+    cake: { ...def.cake, ...(parsed.cake ?? {}) },
+    finale: {
+      ...def.finale,
+      ...(parsed.finale ?? {}),
+      lanterns: parsed.finale?.lanterns?.length ? parsed.finale.lanterns : def.finale.lanterns,
+      poemLines: parsed.finale?.poemLines?.length ? parsed.finale.poemLines : def.finale.poemLines,
     },
   };
 }
@@ -147,15 +204,7 @@ function decodeContentFromBase64(b64: string): SiteContent | null {
     }
     const json = new TextDecoder().decode(bytes);
     const parsed = JSON.parse(json) as Partial<SiteContent>;
-    const def = getDefaultSiteContent();
-    return {
-      envelope: { ...def.envelope, ...(parsed.envelope ?? {}) },
-      story: { ...def.story, ...(parsed.story ?? {}) },
-      letter: { ...def.letter, ...(parsed.letter ?? {}) },
-      blessings: { ...def.blessings, ...(parsed.blessings ?? {}) },
-      cake: { ...def.cake, ...(parsed.cake ?? {}) },
-      finale: { ...def.finale, ...(parsed.finale ?? {}) },
-    };
+    return mergeWithDefaults(parsed);
   } catch {
     return null;
   }
@@ -188,17 +237,12 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
+      const saved =
+        window.localStorage.getItem(STORAGE_KEY) ??
+        window.localStorage.getItem('snvv-ba-editable-content-v3');
       if (saved) {
         const parsed = JSON.parse(saved) as Partial<SiteContent>;
-        return {
-          envelope: { ...def.envelope, ...(parsed.envelope ?? {}) },
-          story: { ...def.story, ...(parsed.story ?? {}) },
-          letter: { ...def.letter, ...(parsed.letter ?? {}) },
-          blessings: { ...def.blessings, ...(parsed.blessings ?? {}) },
-          cake: { ...def.cake, ...(parsed.cake ?? {}) },
-          finale: { ...def.finale, ...(parsed.finale ?? {}) },
-        };
+        return mergeWithDefaults(parsed);
       }
     } catch {
       // Fallback to default
@@ -215,6 +259,9 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (typeof document !== 'undefined' && content.envelope.pageTitle) {
+      document.title = content.envelope.pageTitle;
+    }
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
     } catch {
@@ -231,6 +278,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     setContent(def);
     try {
       window.localStorage.removeItem(STORAGE_KEY);
+      window.localStorage.removeItem('snvv-ba-editable-content-v3');
       if (window.location.hash.startsWith('#gift=')) {
         window.history.replaceState(null, '', window.location.pathname);
       }

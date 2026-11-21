@@ -17,7 +17,7 @@ export function FinaleSection() {
               loading="lazy"
               decoding="async"
             />
-            <span className="finale-seal-num">20·11</span>
+            <span className="finale-seal-num">{content.finale.finaleSealText}</span>
           </div>
 
           <div className="section-kicker" style={{ marginBottom: '0.75rem' }}>

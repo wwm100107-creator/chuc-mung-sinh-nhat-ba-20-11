@@ -64,7 +64,7 @@ export function HeroSection() {
           {/* Pure Scroll-Driven 3D Story Beats */}
           <div className="story-content-col">
             <div className="storybook-date-tag">
-              <span>{content.envelope.dateBadge}</span>
+              <span>{content.story.topBadge}</span>
             </div>
 
             <div id="hero-heading" className="story-3d-viewport">

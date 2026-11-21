@@ -62,6 +62,9 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
             <h2 id="blessings-heading" className="section-title">
               {content.blessings.sectionTitle}
             </h2>
+            {content.blessings.sectionDesc && (
+              <p className="section-desc">{content.blessings.sectionDesc}</p>
+            )}
           </div>
 
           <div className="blessings-scrolly-layout">
@@ -80,7 +83,9 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                 />
                 <div className="wreath-center-calligraphy">
                   <span className="wreath-center-seal">
-                    {isSecretStage ? 'Món Quà 7' : (items[activeStep]?.sealLabel ?? '')}
+                    {isSecretStage
+                      ? content.blessings.secretGift.wreathCenterLabel
+                      : (items[activeStep]?.sealLabel ?? '')}
                   </span>
                   <span className="wreath-center-num">
                     {isSecretStage
@@ -117,13 +122,16 @@ export function BlessingsGrid({ onBurst }: BlessingsGridProps) {
                   >
                     <div className="blessing-card-top">
                       <span className={`blessing-seal accent-${item.accent}`}>
-                        {item.sealLabel} · Lời chúc 0{idx + 1}
+                        {item.sealLabel}
+                        {content.blessings.cardBadgePrefix
+                          ? ` · ${content.blessings.cardBadgePrefix} 0${idx + 1}`
+                          : ''}
                       </span>
                     </div>
                     <h3 className="deck-card-title">{item.title}</h3>
                     <p className="deck-card-body">{item.message}</p>
                     <div className="deck-card-footer-hint">
-                      Cuộn nhẹ xuống để lật mở lời chúc tiếp theo ({idx + 1}/{totalSteps})
+                      {content.blessings.cardFooterHint} ({idx + 1}/{totalSteps})
                     </div>
                   </article>
                 );
