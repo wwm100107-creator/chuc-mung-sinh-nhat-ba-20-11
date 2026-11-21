@@ -13,7 +13,6 @@ import {
   INITIAL_LANTERNS,
   LETTER_CONTENT,
   SECRET_SEVENTH_BLESSING,
-  getBirthdayDateInfo,
   type BlessingItem,
   type LanternWish,
 } from '../data/birthdayContent';
@@ -73,28 +72,22 @@ export interface SiteContent {
   };
 }
 
-const STORAGE_KEY = 'snvv-ba-editable-content-v4';
-const LEGACY_KEYS = [
-  'snvv-ba-editable-content-v4',
-  'snvv-ba-editable-content-v3',
-  'snvv-ba-editable-content-v2',
-  'snvv-ba-editable-content-v1',
-];
+const STORAGE_KEY = 'snvv-ba-editable-content-v5';
 
 export function getDefaultSiteContent(): SiteContent {
-  const dateInfo = getBirthdayDateInfo();
   return {
     envelope: {
-      pageTitle: 'Chúc Mừng Sinh Nhật Bà Yêu Quý - 20/11',
-      dateBadge: dateInfo.badgeText,
-      recipientTitle: 'Kính gửi Bà yêu quý',
-      envelopeSubtitle: 'Vuốt nhẹ trang giấy để lật mở từng chương kỷ niệm',
-      scrollHint1: 'Vuốt nhẹ lên để lật mở từng trang',
+      pageTitle: 'Chúc Mừng Sinh Nhật Bà Yêu',
+      dateBadge: 'Kỷ niệm ngày sinh nhật Bà · 20 Tháng 11',
+      recipientTitle: 'Kính gửi Bà yêu',
+      envelopeSubtitle: 'Bà vuốt nhẹ xuống dưới nha ạ!',
+      scrollHint1: '',
       welcomeBadge: 'Ngày Sinh Nhật Đặc Biệt · 20 Tháng 11',
       welcomeTitleTop: 'Chúc Mừng Sinh Nhật',
-      welcomeTitleHighlight: 'Bà Yêu Quý',
-      welcomeDescription: `${dateInfo.subStatusText}. Mỗi trang giấy màu nước tiếp theo là một lời chúc bình an con cháu vẽ dành tặng riêng Bà.`,
-      scrollHint2: 'Vuốt tiếp xuống để mở cuộn thư chúc mừng Bà',
+      welcomeTitleHighlight: 'Bà Yêu',
+      welcomeDescription:
+        'Mỗi trang giấy tiếp theo là một lời chúc bình an gia đình con dành tặng riêng Bà.',
+      scrollHint2: 'Bà vuốt xuống dưới tiếp đi ạ !',
     },
     letter: {
       sealTop: '20',
@@ -109,21 +102,17 @@ export function getDefaultSiteContent(): SiteContent {
       sectionTitle: 'Sáu Lời Chúc Vàng & Món Quà Thứ Bảy',
       sectionDesc: 'Cuộn nhẹ trang giấy để xoay vòng hoa cúc và lật mở từng tấm thiệp chúc thọ.',
       cardBadgePrefix: 'Lời chúc',
-      cardFooterHint: 'Cuộn nhẹ xuống để lật mở lời chúc tiếp theo',
+      cardFooterHint: 'Bà cuộn nhẹ xuống tiếp nha ạ!',
       items: BLESSINGS_LIST.map((item) => ({ ...item })),
-      secretGift: {
-        wreathCenterLabel: 'Món Quà 7',
-        ...SECRET_SEVENTH_BLESSING,
-      },
+      secretGift: { ...SECRET_SEVENTH_BLESSING },
     },
     cake: {
-      sectionKicker: 'Chiếc Bánh Kem Hoa Cúc Mùa Thu 20·11',
+      sectionKicker: 'Chiếc Bánh Kem Sinh Nhật Tặng Cho Bà 20·11',
       sectionTitle: 'Từng Lớp Bánh Ngọt Ngào Dâng Tặng Bà',
-      sectionDesc:
-        'Cuộn trang từ từ để xem từng tầng bánh, lớp kem tươi chảy mềm, hoa cúc vàng và 5 ngọn nến thắp lửa sáng rực.',
+      sectionDesc: 'Bà cuộn trang từ từ để xem tiếp ạ!',
       wishTitle: 'Chúc Mừng Sinh Nhật Bà 20/11!',
       wishMessage:
-        'Chiếc bánh sinh nhật đã thắp sáng đủ 5 ngọn nến ấm áp. Kính chúc Bà tuổi mới luôn dồi dào sức khỏe, tay chân vững vàng và nụ cười rạng rỡ mỗi sớm mai!',
+        'Nến đã thổi rồi, điều bà ước chắc chắn sẽ thành sự thật ạ. Con cháu chúc bà tuổi mới thật khỏe, thật vui, và năm nào cũng được cùng bà thổi nến như hôm nay ạ.',
     },
     finale: {
       lanternKicker: 'Hồ Hoa Đăng Mùa Thu 20·11',
@@ -166,44 +155,6 @@ function mergeWithDefaults(parsed: Partial<SiteContent>): SiteContent {
       poemLines: parsed.finale?.poemLines?.length ? parsed.finale.poemLines : def.finale.poemLines,
     },
   };
-}
-
-function hasCustomUserEdits(candidate: SiteContent, def: SiteContent): boolean {
-  if (candidate.envelope.recipientTitle !== def.envelope.recipientTitle) return true;
-  if (candidate.envelope.welcomeTitleHighlight !== def.envelope.welcomeTitleHighlight) return true;
-  if (candidate.letter.salutation !== def.letter.salutation) return true;
-  if (candidate.letter.signature !== def.letter.signature) return true;
-  if (JSON.stringify(candidate.letter.paragraphs) !== JSON.stringify(def.letter.paragraphs)) return true;
-  if (JSON.stringify(candidate.blessings.items) !== JSON.stringify(def.blessings.items)) return true;
-  if (candidate.blessings.secretGift.message !== def.blessings.secretGift.message) return true;
-  if (candidate.cake.wishTitle !== def.cake.wishTitle) return true;
-  if (candidate.cake.wishMessage !== def.cake.wishMessage) return true;
-  if (JSON.stringify(candidate.finale.lanterns) !== JSON.stringify(def.finale.lanterns)) return true;
-  if (JSON.stringify(candidate.finale.poemLines) !== JSON.stringify(def.finale.poemLines)) return true;
-  if (candidate.finale.footerText !== def.finale.footerText) return true;
-  return false;
-}
-
-function loadBestSavedContent(def: SiteContent): SiteContent {
-  // Check v4 -> v3 -> v2 -> v1 and prioritize the newest key that actually contains custom user edits
-  let fallbackParsed: SiteContent | null = null;
-  for (const key of LEGACY_KEYS) {
-    try {
-      const raw = window.localStorage.getItem(key);
-      if (!raw) continue;
-      const parsed = JSON.parse(raw) as Partial<SiteContent>;
-      const merged = mergeWithDefaults(parsed);
-      if (hasCustomUserEdits(merged, def)) {
-        return merged;
-      }
-      if (!fallbackParsed) {
-        fallbackParsed = merged;
-      }
-    } catch {
-      // Ignore corrupt key
-    }
-  }
-  return fallbackParsed ?? def;
 }
 
 function encodeContentToBase64(content: SiteContent): string {
@@ -259,7 +210,17 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    return loadBestSavedContent(def);
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Partial<SiteContent>;
+        return mergeWithDefaults(parsed);
+      }
+    } catch {
+      // Fallback to baked-in custom defaults
+    }
+
+    return def;
   });
 
   useEffect(() => {
@@ -316,9 +277,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     const def = getDefaultSiteContent();
     setContent(def);
     try {
-      for (const key of LEGACY_KEYS) {
-        window.localStorage.removeItem(key);
-      }
+      window.localStorage.removeItem(STORAGE_KEY);
       if (window.location.hash.startsWith('#gift=')) {
         window.history.replaceState(null, '', window.location.pathname);
       }

@@ -11,7 +11,7 @@ export function getBirthdayDateInfo(now: Date = new Date()): BirthdayDateInfo {
   if (month === 10 && day === 20) {
     return {
       isBirthdayToday: true,
-      badgeText: 'Hôm nay là ngày thật đặc biệt · 20 Tháng 11',
+      badgeText: 'Kỷ niệm ngày sinh nhật Bà · 20 Tháng 11',
       subStatusText: 'Cả nhà quây quần chúc mừng sinh nhật Bà yêu quý',
     };
   }
@@ -49,12 +49,10 @@ export const CHAPTERS_META: ChapterMeta[] = [
 export const LETTER_CONTENT = {
   salutation: 'Kính gửi Bà yêu quý của cháu,',
   paragraphs: [
-    'Tháng mười một về mang theo gió se lạnh đầu đông và những chùm cúc vàng rực rỡ nơi góc sân, cũng là ngày đặc biệt mà cả nhà luôn mong chờ — ngày sinh nhật của Bà.',
-    'Trong ký ức của cháu, lúc nào Bà cũng hiện lên thật hiền hậu: từ bàn tay tảo tần chắt chiu từng bữa cơm nóng hổi, giọng nói ấm áp dặn dò mỗi khi trời trở gió, cho đến nụ cười rạng rỡ mỗi lần con cháu quây quần đông đủ dưới mái nhà.',
-    'Nhân dịp sinh nhật 20 tháng 11 năm nay, cháu chẳng mong gì hơn ngoài việc Bà luôn dồi dào sức khỏe, ăn ngon giấc tròn, lòng luôn thanh thản bình an và sống thật vui vẻ trường thọ bên con cháu.',
-    'Cảm ơn Bà vì đã luôn là điểm tựa êm đềm nhất, là ngọn đèn ấm áp sưởi ấm cả gia đình qua bao năm tháng.',
+    'Tháng mười một về mang theo gió se lạnh đầu đông và những chùm cúc vàng rực rỡ nơi góc sân, cũng là ngày đặc biệt mà cả nhà luôn mong chờ - ngày sinh nhật của Bà.',
+    'Nhân dịp sinh nhật 20 tháng 11 năm nay, con chẳng mong gì hơn ngoài việc Bà luôn dồi dào sức khỏe, ăn ngon giấc tròn, lòng luôn thanh thản bình an và sống thật vui vẻ trường thọ bên con cháu.',
   ],
-  closing: 'Cháu thương và kính chúc Bà thật nhiều sức khỏe,',
+  closing: 'Gia đình con thương và kính chúc Bà thật nhiều sức khỏe,',
   signature: 'Cháu yêu của Bà · 20/11',
 };
 
@@ -72,63 +70,64 @@ export const BLESSINGS_LIST: BlessingItem[] = [
     id: 'binh-an',
     sealLabel: 'Chữ An',
     title: 'Bình An Mỗi Ngày',
-    subtitle: 'Cuộn hoặc chạm để mở',
+    subtitle: 'Cuộn nhẹ để mở',
     message:
-      'Chúc Bà sớm hôm thư thái, tâm hồn nhẹ nhàng như tách trà ấm buổi sáng, mọi muộn phiền đều tan biến theo gió thu.',
+      'Chúc bà mỗi ngày đều bình an, trong lòng lúc nào cũng nhẹ nhõm. Có chuyện gì không vui, mong là cũng sẽ mau qua để bà không phải bận lòng ạ.',
     accent: 'crimson',
   },
   {
     id: 'suc-khoe',
     sealLabel: 'Chữ Khang',
     title: 'Sức Khỏe Dồi Dào',
-    subtitle: 'Cuộn hoặc chạm để mở',
+    subtitle: 'Cuộn nhẹ để mở',
     message:
-      'Mong Bà luôn mạnh khỏe, bước chân vững vàng, ăn cơm thật ngon miệng và ngủ một giấc thật sâu mỗi tối.',
+      'Chúc bà luôn mạnh khỏe, ăn uống ngon miệng, đêm nào cũng ngủ được giấc thật sâu. Mong bà đi lại nhẹ nhàng, không còn đau nhức gì nữa ạ.',
     accent: 'tea',
   },
   {
     id: 'truong-tho',
     sealLabel: 'Chữ Thọ',
     title: 'Phúc Thọ Trường Tồn',
-    subtitle: 'Cuộn hoặc chạm để mở',
+    subtitle: 'Cuộn nhẹ để mở',
     message:
-      'Chúc Bà phúc như Đông Hải, thọ tỷ Nam Sơn — mái tóc bạc vẫn rạng ngời bên con cháu qua thật nhiều mùa hoa cúc nở.',
+      'Chúc bà sống thật lâu, thật khỏe bên cả nhà. Mong bà còn được nhìn các cháu, các chắt lớn lên từng ngày ạ.',
     accent: 'gold',
   },
   {
     id: 'niem-vui',
     sealLabel: 'Chữ Hỷ',
     title: 'Tiếng Cười Rạng Rỡ',
-    subtitle: 'Cuộn hoặc chạm để mở',
+    subtitle: 'Cuộn nhẹ để mở',
     message:
-      'Mong nụ cười hiền từ của Bà luôn nở trên môi mỗi ngày, để niềm vui nho nhỏ luôn gõ cửa hiên nhà.',
+      'Mong ngày nào bà cũng có chuyện vui, lúc nào cũng tươi cười. Chỉ cần thấy bà vui là cả nhà mình cũng vui theo rồi ạ.',
     accent: 'crimson',
   },
   {
     id: 'sum-vay',
     sealLabel: 'Chữ Hòa',
     title: 'Gia Đình Sum Vầy',
-    subtitle: 'Cuộn hoặc chạm để mở',
+    subtitle: 'Cuộn nhẹ để mở',
     message:
-      'Chúc ngôi nhà của Bà luôn rộn rã tiếng trò chuyện, mỗi dịp lễ Tết hay cuối tuần con cháu lại quây quần đông đủ.',
+      'Chúc nhà mình luôn êm ấm, anh chị em lúc nào cũng thương yêu nhau. Mong nhà bà lúc nào cũng đông đủ con cháu về thăm ạ.',
     accent: 'tea',
   },
   {
     id: 'am-ap',
     sealLabel: 'Chữ Phúc',
     title: 'Trọn Vẹn Yêu Thương',
-    subtitle: 'Cuộn hoặc chạm để mở',
+    subtitle: 'Cuộn nhẹ để mở',
     message:
-      'Bà là kho báu lớn nhất của cả gia đình. Chúc Bà luôn cảm nhận được tình thương yêu ấm áp từ tất cả con cháu.',
+      'Bà là người cả nhà thương nhất. Dù con cháu có đi xa đến đâu, trong lòng mọi người lúc nào cũng có bà ạ.',
     accent: 'gold',
   },
 ];
 
 export const SECRET_SEVENTH_BLESSING = {
-  badge: 'Món Quà Thứ Bảy Dành Riêng Cho Bà',
+  wreathCenterLabel: 'Tình yêu thương to lớn',
+  badge: 'Món Quà Dành Riêng Cho Bà',
   title: 'Ngàn Lời Cảm Ơn Không Kể Xiết',
   message:
-    'Dù thời gian có trôi qua bao mùa thu 20 tháng 11, với cháu và cả gia đình, nụ cười khỏe mạnh của Bà vẫn mãi là món quà quý giá nhất trên đời. Chúc mừng sinh nhật Bà thật hạnh phúc!',
+    'Cả đời bà lo cho con cho cháu mà chưa bao giờ kể công. Có nhiều điều bà làm mà không nói ra, đến giờ lớn rồi con cháu mới hiểu hết. Hôm nay con cháu chỉ muốn nói với bà: cảm ơn bà nhiều lắm, cả nhà thương bà lắm ạ.',
 };
 
 export interface LanternWish {
@@ -142,46 +141,26 @@ export interface LanternWish {
 export const INITIAL_LANTERNS: LanternWish[] = [
   {
     id: 'l-1',
-    sender: 'Cháu yêu',
+    sender: 'Cháu Uy siêu đẹp trai',
     message: 'Chúc Bà sinh nhật 20/11 thật nhiều sức khỏe và luôn cười thật tươi ạ!',
     tone: 'amber',
     createdAt: 1,
   },
   {
     id: 'l-2',
-    sender: 'Cả gia đình',
+    sender: 'Cháu Vy siêu xinh gái',
     message: 'Mong Bà mãi bình an, sống lâu trăm tuổi làm điểm tựa ấm áp cho con cháu.',
     tone: 'coral',
     createdAt: 2,
   },
   {
     id: 'l-3',
-    sender: 'Con cháu phương xa',
-    message: 'Dù ở đâu con cháu vẫn luôn nhớ những bữa cơm ấm nóng tay Bà nấu.',
+    sender: 'Cả gia đình',
+    message:
+      'Gia đình con chúc bà luôn mạnh khỏe, bình an bên con cháu. Với cả nhà, bà giống như ngọn đèn trong nhà, có bà là nhà mình lúc nào cũng ấm. Con cháu mong được ở bên bà thật lâu, để mỗi năm lại được cùng nhau mừng sinh nhật bà như hôm nay.',
     tone: 'ivory',
     createdAt: 3,
   },
-  {
-    id: 'l-4',
-    sender: 'Mùa thu 20/11',
-    message: 'Chúc Bà ngủ ngon giấc tròn, sáng dậy đón nắng vàng nhẹ nhàng và thư thái.',
-    tone: 'amber',
-    createdAt: 4,
-  },
-  {
-    id: 'l-5',
-    sender: 'Bình an',
-    message: 'Gửi ngàn đóa hoa cúc vàng chúc Bà thêm tuổi mới an nhiên tự tại.',
-    tone: 'coral',
-    createdAt: 5,
-  },
-];
-
-export const QUICK_WISH_SUGGESTIONS: string[] = [
-  'Chúc Bà luôn mạnh khỏe, an vui mỗi ngày!',
-  'Chúc Bà sống lâu trăm tuổi bên con cháu!',
-  'Mỗi ngày đều là một ngày thật bình an với Bà!',
-  'Con cháu thương Bà thật nhiều, chúc mừng sinh nhật Bà!',
 ];
 
 export const CLOSING_POEM: string[] = [

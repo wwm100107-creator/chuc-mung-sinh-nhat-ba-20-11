@@ -88,11 +88,13 @@ export function EnvelopeIntro({ onBurst }: EnvelopeIntroProps) {
             />
           </div>
 
-          <div className="envelope-cta-row">
-            <div className="scroll-cue" style={{ opacity: hintFade }}>
-              <span>{content.envelope.scrollHint1}</span>
+          {content.envelope.scrollHint1 && (
+            <div className="envelope-cta-row">
+              <div className="scroll-cue" style={{ opacity: hintFade }}>
+                <span>{content.envelope.scrollHint1}</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Layer B: Hand-Painted Storybook Title Page */}
