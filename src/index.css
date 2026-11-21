@@ -1077,15 +1077,17 @@ textarea:focus-visible {
 
 .animated-cake-stage-box {
   position: relative;
-  width: min(410px, 84vw);
+  width: min(330px, 76vw);
   margin-bottom: 0.35rem;
   transition: width 0.35s ease;
 }
 
 .animated-cake-svg {
   width: 100%;
+  max-height: 52vh;
   height: auto;
   display: block;
+  margin-inline: auto;
   overflow: visible;
   filter: drop-shadow(0 14px 24px rgba(84, 52, 24, 0.12));
 }
