@@ -9,12 +9,10 @@ export function LetterSection() {
 
   const paragraphs = content.letter.paragraphs;
   const totalParagraphs = Math.max(1, paragraphs.length);
-  const unrollFactor = smoothstep(progress, 0.0, 0.18);
-  const readingPos = clamp((progress - 0.08) / 0.72, 0, 0.9999);
+  const unrollFactor = smoothstep(progress, 0.0, 0.16);
+  const readingPos = clamp((progress - 0.06) / 0.72, 0, 0.9999);
   const activeParaIndex = Math.min(totalParagraphs - 1, Math.floor(readingPos * totalParagraphs));
-  const sealStamped = progress >= 0.8;
-
-  const localParaProgress = clamp(readingPos * totalParagraphs - activeParaIndex, 0, 1);
+  const sealStamped = progress >= 0.78;
 
   const tokenizedParagraphs = useMemo(() => {
     const wordsPerPara = paragraphs.map((p) => p.split(' '));
@@ -22,11 +20,10 @@ export function LetterSection() {
     let globalCursor = 0;
 
     return wordsPerPara.map((words) =>
-      words.map((word, wIdx) => {
+      words.map((word) => {
         const ratio = globalCursor / Math.max(1, totalWords - 1);
-        const localRatio = wIdx / Math.max(1, words.length - 1);
         globalCursor += 1;
-        return { word, ratio, localRatio };
+        return { word, ratio };
       }),
     );
   }, [paragraphs]);
@@ -74,7 +71,7 @@ export function LetterSection() {
           <div
             className="storybook-sheet letter-watercolor-sheet"
             style={{
-              transform: `perspective(1200px) rotateX(${(1 - unrollFactor) * 6}deg) scaleY(${0.95 + unrollFactor * 0.05})`,
+              transform: `perspective(1200px) rotateX(${(1 - unrollFactor) * 5}deg) scaleY(${0.96 + unrollFactor * 0.04})`,
             }}
           >
             <div className="ink-progress-rail" aria-hidden="true">
@@ -93,8 +90,8 @@ export function LetterSection() {
               {content.letter.salutation}
             </h2>
 
-            {/* Desktop: Word-by-Word Sepia & Crimson Ink Scrubbing */}
-            <div className="letter-body-desktop">
+            {/* Unified Full-Letter Word-by-Word Sepia & Crimson Ink Scrubbing (Desktop & Mobile) */}
+            <div className="letter-body-unified">
               {tokenizedParagraphs.map((words, pIdx) => {
                 const isActivePara = pIdx === activeParaIndex;
                 return (
@@ -118,25 +115,6 @@ export function LetterSection() {
                   </p>
                 );
               })}
-            </div>
-
-            {/* Mobile: Spacious Scroll-Driven Reader with Real Word-by-Word Ink Scrubbing */}
-            <div className="letter-body-mobile">
-              <p key={activeParaIndex} className="letter-mobile-active-para">
-                {(tokenizedParagraphs[activeParaIndex] ?? []).map((item, wIdx) => {
-                  const delta = localParaProgress - item.localRatio * 0.85;
-                  const isWritten = delta >= -0.08 || sealStamped;
-                  const isBrushTip = Math.abs(delta) < 0.1 && !sealStamped;
-                  return (
-                    <span
-                      key={wIdx}
-                      className={`scrub-word ${isWritten ? 'is-written' : ''} ${isBrushTip ? 'is-brush-tip' : ''}`}
-                    >
-                      {item.word}{' '}
-                    </span>
-                  );
-                })}
-              </p>
             </div>
 
             <footer className={`letter-signoff ${sealStamped ? 'is-revealed' : ''}`}>

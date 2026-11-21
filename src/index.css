@@ -197,7 +197,7 @@ textarea:focus-visible {
   position: sticky;
   top: 0;
   height: 100vh;
-  height: 100dvh;
+  height: 100svh;
   width: 100%;
   overflow: hidden;
   display: flex;
@@ -207,23 +207,28 @@ textarea:focus-visible {
 }
 
 .track-envelope {
-  height: 230dvh;
+  height: 230vh;
+  height: 230svh;
 }
 
 .track-story {
-  height: 235dvh;
+  height: 240vh;
+  height: 240svh;
 }
 
 .track-letter {
-  height: 260dvh;
+  height: 265vh;
+  height: 265svh;
 }
 
 .track-blessings {
-  height: 285dvh;
+  height: 300vh;
+  height: 300svh;
 }
 
 .track-cake {
-  height: 275dvh;
+  height: 290vh;
+  height: 290svh;
 }
 
 /* Shared section heading language */
@@ -785,7 +790,7 @@ textarea:focus-visible {
   line-height: 1.22;
 }
 
-.letter-body-desktop {
+.letter-body-unified {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -798,7 +803,6 @@ textarea:focus-visible {
   font-family: var(--font-serif);
   font-size: 0.95rem;
   line-height: 1.66;
-  cursor: pointer;
   transition: border-color 0.3s ease, transform 0.3s ease;
 }
 
@@ -819,10 +823,6 @@ textarea:focus-visible {
 .scrub-word.is-brush-tip {
   color: var(--crimson);
   font-weight: 500;
-}
-
-.letter-body-mobile {
-  display: none;
 }
 
 .letter-signoff {
@@ -1773,25 +1773,29 @@ textarea:focus-visible {
   }
 
   .track-envelope {
-    height: 175dvh;
+    height: 195vh;
+    height: 195svh;
   }
   .track-story {
-    height: 190dvh;
+    height: 225vh;
+    height: 225svh;
   }
   .track-letter {
-    height: 215dvh;
+    height: 245vh;
+    height: 245svh;
   }
   .track-blessings {
-    height: 230dvh;
+    height: 295vh;
+    height: 295svh;
   }
   .track-cake {
-    height: 245dvh;
+    height: 285vh;
+    height: 285svh;
   }
 
   .watercolor-envelope-art-box {
-    width: min(275px, 68vw);
+    width: min(265px, 66vw);
     margin-block: 0.1rem 0.35rem;
-    cursor: pointer;
   }
 
   .mobile-full-btn {
@@ -1799,16 +1803,16 @@ textarea:focus-visible {
   }
 
   .welcome-reveal-card {
-    padding: 1.2rem 1.15rem;
+    padding: 1.15rem 1.1rem;
   }
 
   .welcome-watercolor-vignette {
-    width: min(185px, 46vw);
-    margin-bottom: 0.35rem;
+    width: min(175px, 44vw);
+    margin-bottom: 0.3rem;
   }
 
   .watercolor-free-art-wrap {
-    width: min(230px, 56vw);
+    width: min(215px, 52vw);
   }
 
   .storybook-painting-caption {
@@ -1816,8 +1820,8 @@ textarea:focus-visible {
   }
 
   .story-3d-viewport {
-    height: 178px;
-    margin-bottom: 0.65rem;
+    height: 198px;
+    margin-bottom: 0.45rem;
   }
 
   .story-3d-card {
@@ -1825,282 +1829,152 @@ textarea:focus-visible {
   }
 
   .story-beat-title {
-    font-size: clamp(1.38rem, 5.2vw, 1.75rem);
-    margin-bottom: 0.3rem;
+    font-size: clamp(1.32rem, 5vw, 1.68rem);
+    margin-bottom: 0.28rem;
   }
 
   .story-beat-body {
-    font-size: 0.94rem;
-    line-height: 1.62;
-  }
-
-  .beat-dots-bar {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 0.38rem;
-    margin-bottom: 0.65rem;
-    padding-bottom: 2px;
-  }
-
-  .beat-pill-btn {
-    min-height: 34px;
-    padding: 0.25rem 0.7rem;
-    font-size: 0.78rem;
-    white-space: nowrap;
-  }
-
-  .story-quick-jumps {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-    width: 100%;
-  }
-
-  .story-quick-jumps .btn-primary,
-  .story-quick-jumps .btn-secondary {
-    width: 100%;
-    min-height: 42px;
-    padding: 0.5rem 0.65rem;
-    font-size: 0.85rem;
+    font-size: 0.93rem;
+    line-height: 1.58;
   }
 
   .watercolor-scroll-header-art {
-    width: min(230px, 58vw);
-    margin-bottom: -0.35rem;
+    width: min(168px, 44vw);
+    margin-bottom: -0.4rem;
   }
 
   .letter-watercolor-sheet {
-    padding: 1.1rem 1.15rem;
+    padding: 0.95rem 1.05rem;
   }
 
   .letter-salutation {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.38rem;
+    margin-bottom: 0.42rem;
+    padding-right: 2.9rem;
   }
 
-  .letter-body-desktop {
-    display: none;
+  .letter-body-unified {
+    gap: 0.42rem;
   }
 
-  .letter-body-mobile {
-    display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
-  }
-
-  .letter-mobile-active-para {
-    margin: 0;
-    min-height: 118px;
-    font-family: var(--font-serif);
-    font-size: 0.97rem;
-    line-height: 1.7;
-    color: var(--ink);
-  }
-
-  .letter-mobile-pager {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.65rem;
-  }
-
-  .pager-dots {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-
-  .pager-dot {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: 1px solid var(--ink-line);
-    background: var(--bg-ivory);
-    color: var(--sepia);
-    font-family: var(--font-serif);
-    font-size: 0.8rem;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .pager-dot.is-active {
-    background: var(--crimson);
-    border-color: var(--crimson);
-    color: #fffaf2;
-  }
-
-  .pager-icon-btn {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    border: 1px solid var(--ink-line);
-    background: var(--bg-ivory);
-    color: var(--ink);
-    font-size: 1.15rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .pager-icon-btn:disabled {
-    opacity: 0.35;
-    cursor: default;
+  .letter-para-scrub {
+    padding-left: 0.65rem;
+    font-size: 0.87rem;
+    line-height: 1.52;
   }
 
   .letter-signoff {
-    margin-top: 0.65rem;
-    padding-top: 0.55rem;
+    margin-top: 0.5rem;
+    padding-top: 0.45rem;
+  }
+
+  .letter-closing {
+    font-size: 0.82rem;
+  }
+
+  .letter-signature {
+    font-size: 1.38rem;
   }
 
   .letter-seal-mark {
-    width: 44px;
-    height: 44px;
-    font-size: 0.74rem;
-    top: 0.75rem;
-    right: 0.75rem;
+    width: 40px;
+    height: 40px;
+    font-size: 0.7rem;
+    top: 0.65rem;
+    right: 0.65rem;
   }
 
   .petal-wheel-panel {
-    gap: 0.55rem;
+    gap: 0.45rem;
   }
 
   .watercolor-wreath-box {
-    width: min(148px, 38vw);
+    width: min(138px, 35vw);
   }
 
   .wreath-center-seal {
-    font-size: 1.05rem;
+    font-size: 1.02rem;
   }
 
   .wreath-center-num {
-    font-size: 0.74rem;
-  }
-
-  .petal-chips-grid {
-    gap: 0.32rem;
-    max-width: 100%;
-  }
-
-  .petal-chip-btn {
-    min-height: 32px;
-    padding: 0.22rem 0.64rem;
-    font-size: 0.78rem;
+    font-size: 0.72rem;
   }
 
   .blessings-3d-stage {
-    height: 196px;
+    height: 212px;
   }
 
   .deck-3d-card {
-    padding: 1rem 1.1rem;
+    padding: 0.95rem 1.05rem;
   }
 
   .deck-card-title {
-    font-size: 1.45rem;
-    margin: 0.25rem 0;
+    font-size: 1.38rem;
+    margin: 0.22rem 0;
   }
 
   .deck-card-body {
-    font-size: 0.94rem;
-    line-height: 1.62;
+    font-size: 0.92rem;
+    line-height: 1.58;
   }
 
   .deck-card-footer-hint {
-    font-size: 0.76rem;
+    font-size: 0.75rem;
   }
 
   .cake-watercolor-card {
-    padding: 0.75rem 0.9rem;
+    padding: 0.65rem 0.85rem;
   }
 
   .animated-cake-stage-box {
-    width: min(295px, 74vw);
-    margin-bottom: 0.2rem;
+    width: min(235px, 60vw);
+    margin-bottom: 0.1rem;
   }
 
-  .cake-watercolor-card.is-wish-revealed .animated-cake-stage-box {
-    width: min(215px, 54vw);
-  }
-
-  .craft-steps-bar {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    justify-content: flex-start;
-    width: 100%;
-    padding-bottom: 3px;
-    margin-bottom: 0.5rem;
-    scrollbar-width: none;
-  }
-
-  .craft-steps-bar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .craft-step-pill {
-    white-space: nowrap;
-    flex-shrink: 0;
-    font-size: 0.74rem;
-    padding: 0.22rem 0.62rem;
-    min-height: 28px;
+  .animated-cake-svg {
+    max-height: 43svh;
   }
 
   .cake-compact-heading .section-desc {
     display: none;
   }
 
-  .cake-progress-text {
-    font-size: 0.85rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .cake-controls {
-    width: 100%;
-    gap: 0.5rem;
-  }
-
-  .cake-controls .btn-primary,
-  .cake-controls .btn-secondary {
-    flex: 1 1 140px;
-    min-height: 42px;
-    padding: 0.5rem 0.85rem;
-    font-size: 0.86rem;
-  }
-
   .wish-reveal-card {
-    margin-top: 0.55rem;
-    padding: 0.7rem 0.9rem;
+    margin-top: 0.35rem;
+    padding: 0.6rem 0.85rem;
   }
 
   .wish-reveal-card h3 {
-    font-size: 1.22rem;
-    margin-bottom: 0.15rem;
+    font-size: 1.15rem;
+    margin-bottom: 0.12rem;
   }
 
   .wish-reveal-card p {
-    font-size: 0.86rem;
-    line-height: 1.5;
+    font-size: 0.84rem;
+    line-height: 1.46;
   }
 
   .lantern-pond-stage {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 0.75rem;
-    padding-bottom: 0.5rem;
-    scrollbar-width: none;
-  }
-
-  .lantern-pond-stage::-webkit-scrollbar {
-    display: none;
+    padding-bottom: 0.4rem;
   }
 
   .lantern-watercolor-card {
-    flex: 0 0 82vw;
-    max-width: 300px;
-    scroll-snap-align: center;
+    width: 100%;
+    max-width: 100%;
+    padding: 0.95rem 1.1rem;
+  }
+
+  .content-editor-fab {
+    bottom: calc(0.65rem + env(safe-area-inset-bottom));
+    left: 0.75rem;
+    padding: 0.38rem 0.84rem;
+    min-height: 34px;
+    font-size: 0.78rem;
+    opacity: 0.88;
+    backdrop-filter: blur(8px);
   }
 
   .lantern-form-grid {
@@ -2147,40 +2021,36 @@ textarea:focus-visible {
 
 @media (max-height: 680px) and (max-width: 768px) {
   .watercolor-envelope-art-box {
-    width: 215px;
+    width: 205px;
   }
 
   .watercolor-free-art-wrap {
-    width: 185px;
+    width: 175px;
   }
 
   .story-3d-viewport {
-    height: 162px;
+    height: 184px;
   }
 
   .watercolor-scroll-header-art {
-    width: 180px;
+    width: 145px;
   }
 
-  .letter-mobile-active-para {
-    min-height: 102px;
-    font-size: 0.92rem;
+  .letter-para-scrub {
+    font-size: 0.82rem;
+    line-height: 1.44;
   }
 
   .watercolor-wreath-box {
-    width: 120px;
+    width: 112px;
   }
 
   .blessings-3d-stage {
-    height: 178px;
+    height: 194px;
   }
 
   .animated-cake-stage-box {
-    width: 225px;
-  }
-
-  .cake-watercolor-card.is-wish-revealed .animated-cake-stage-box {
-    width: 170px;
+    width: 195px;
   }
 }
 

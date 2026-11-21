@@ -108,7 +108,7 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
   const celebrationFiredRef = useRef(false);
 
   const activeStepIndex =
-    t < 0.16 ? 0 : t < 0.34 ? 1 : t < 0.54 ? 2 : t < 0.72 ? 3 : t < 0.82 ? 4 : 5;
+    t < 0.14 ? 0 : t < 0.30 ? 1 : t < 0.48 ? 2 : t < 0.64 ? 3 : t < 0.73 ? 4 : 5;
 
   useEffect(() => {
     if (activeStepIndex > lastStepChimeRef.current && t > 0.04) {
@@ -121,27 +121,27 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
   }, [activeStepIndex, t]);
 
   useEffect(() => {
-    if (t >= 0.92 && !celebrationFiredRef.current) {
+    if (t >= 0.82 && !celebrationFiredRef.current) {
       celebrationFiredRef.current = true;
       playWishCelebration();
       onGrandCelebrate();
     }
   }, [t, onGrandCelebrate]);
 
-  // 1. Hand-Painted Celadon Ceramic Cake Stand (0.00 -> 0.09)
-  const standP = smoothstep(t, 0.0, 0.09);
-  const standY = (1 - standP) * 68;
+  // 1. Hand-Painted Celadon Ceramic Cake Stand (0.00 -> 0.08)
+  const standP = smoothstep(t, 0.0, 0.08);
+  const standY = (1 - standP) * 64;
 
-  // 2. Bottom Golden Watercolor Sponge Cake Tier (0.05 -> 0.17)
-  const sponge1P = smoothstep(t, 0.05, 0.17);
-  const sponge1DropY = (1 - sponge1P) * -150;
+  // 2. Bottom Golden Watercolor Sponge Cake Tier (0.04 -> 0.15)
+  const sponge1P = smoothstep(t, 0.04, 0.15);
+  const sponge1DropY = (1 - sponge1P) * -145;
   const sponge1Bounce =
     sponge1P > 0.75 ? Math.sin(((sponge1P - 0.75) / 0.25) * Math.PI) * 0.05 : 0;
 
-  // 3. Bottom Flowing Watercolor Cream Frosting (0.16 -> 0.35)
-  const cream1P = smoothstep(t, 0.16, 0.35);
+  // 3. Bottom Flowing Watercolor Cream Frosting (0.14 -> 0.31)
+  const cream1P = smoothstep(t, 0.14, 0.31);
   const cream1StreamOpacity =
-    t >= 0.15 && t <= 0.27 ? Math.sin(remap(t, 0.15, 0.27) * Math.PI) : 0;
+    t >= 0.13 && t <= 0.24 ? Math.sin(remap(t, 0.13, 0.24) * Math.PI) : 0;
   const cream1Flow = buildWatercolorCreamFlow(
     248,
     519,
@@ -156,16 +156,16 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
       ? Math.sin(remap(cream1P, 0.04, 0.97) * Math.PI) * 0.85
       : 0;
 
-  // 4. Top Golden Watercolor Sponge Cake Tier (0.32 -> 0.44)
-  const sponge2P = smoothstep(t, 0.32, 0.44);
-  const sponge2DropY = (1 - sponge2P) * -140;
+  // 4. Top Golden Watercolor Sponge Cake Tier (0.28 -> 0.39)
+  const sponge2P = smoothstep(t, 0.28, 0.39);
+  const sponge2DropY = (1 - sponge2P) * -135;
   const sponge2Bounce =
     sponge2P > 0.75 ? Math.sin(((sponge2P - 0.75) / 0.25) * Math.PI) * 0.05 : 0;
 
-  // 5. Top Flowing Watercolor Cream Frosting (0.42 -> 0.56)
-  const cream2P = smoothstep(t, 0.42, 0.56);
+  // 5. Top Flowing Watercolor Cream Frosting (0.37 -> 0.50)
+  const cream2P = smoothstep(t, 0.37, 0.5);
   const cream2StreamOpacity =
-    t >= 0.41 && t <= 0.51 ? Math.sin(remap(t, 0.41, 0.51) * Math.PI) : 0;
+    t >= 0.36 && t <= 0.46 ? Math.sin(remap(t, 0.36, 0.46) * Math.PI) : 0;
   const cream2Flow = buildWatercolorCreamFlow(
     284,
     485,
@@ -180,18 +180,20 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
       ? Math.sin(remap(cream2P, 0.04, 0.97) * Math.PI) * 0.85
       : 0;
 
-  // 6. Hand-Painted Rose Silk Ribbon & Bow (0.54 -> 0.65)
-  const ribbonWrapP = smoothstep(t, 0.54, 0.6);
-  const bowPopP = easeOutBack(smoothstep(t, 0.58, 0.65));
+  // 6. Hand-Painted Rose Silk Ribbon & Bow (0.48 -> 0.58)
+  const ribbonWrapP = smoothstep(t, 0.48, 0.54);
+  const bowPopP = easeOutBack(smoothstep(t, 0.52, 0.59));
 
-  // 7. Hand-Painted Botanical Chrysanthemums, White Daisies & Sage Leaves (0.60 -> 0.74)
-  const flowerLeftP = easeOutBack(smoothstep(t, 0.6, 0.68));
-  const flowerRightP = easeOutBack(smoothstep(t, 0.63, 0.71));
-  const flowerBaseP = easeOutBack(smoothstep(t, 0.66, 0.74));
+  // 7. Hand-Painted Botanical Chrysanthemums, White Daisies & Sage Leaves (0.54 -> 0.66)
+  const flowerLeftP = easeOutBack(smoothstep(t, 0.54, 0.61));
+  const flowerRightP = easeOutBack(smoothstep(t, 0.57, 0.64));
+  const flowerBaseP = easeOutBack(smoothstep(t, 0.6, 0.67));
 
-  // 8. 5 Hand-Painted Beeswax Candles (0.71 -> 0.83)
-  // 9. Igniting 5 Watercolor & Golden Living Fire VFX Flames (0.81 -> 0.95)
-  const fireMasterP = smoothstep(t, 0.81, 0.95);
+  // 8. 5 Hand-Painted Beeswax Candles (0.64 -> 0.75)
+  // 9. Igniting 5 Watercolor & Golden Living Fire VFX Flames (0.73 -> 0.84)
+  // 10. Hold Zone (0.84 -> 1.00): 16% scroll hold to admire the lit cake & read the wish!
+  const fireMasterP = smoothstep(t, 0.73, 0.84);
+  const wishRevealP = smoothstep(t, 0.78, 0.86);
   const allLit = fireMasterP >= 0.92;
 
   const wandActive = fireMasterP > 0.01 && fireMasterP < 0.96;
@@ -545,8 +547,8 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
 
                 {/* STEP 7 & 8: 5 HAND-PAINTED BEESWAX CANDLES & WATERCOLOR LIVING FIRE VFX */}
                 {WATERCOLOR_CANDLES.map((c, idx) => {
-                  const candleStart = 0.71 + idx * 0.018;
-                  const candleP = smoothstep(t, candleStart, candleStart + 0.08);
+                  const candleStart = 0.64 + idx * 0.016;
+                  const candleP = smoothstep(t, candleStart, candleStart + 0.07);
                   if (candleP <= 0.01) return null;
 
                   const dropY = (1 - easeOutBack(candleP)) * -88;
@@ -647,12 +649,19 @@ export function BirthdayCake({ onGrandCelebrate }: BirthdayCakeProps) {
               </svg>
             </div>
 
-            {allLit && (
-              <div className="wish-reveal-card" role="region" aria-live="polite">
-                <h3>{content.cake.wishTitle}</h3>
-                <p>{content.cake.wishMessage}</p>
-              </div>
-            )}
+            <div
+              className="wish-reveal-card"
+              role="region"
+              aria-live="polite"
+              style={{
+                opacity: wishRevealP,
+                transform: `translate3d(0, ${((1 - wishRevealP) * 14).toFixed(1)}px, 0)`,
+                pointerEvents: wishRevealP > 0.5 ? 'auto' : 'none',
+              }}
+            >
+              <h3>{content.cake.wishTitle}</h3>
+              <p>{content.cake.wishMessage}</p>
+            </div>
           </div>
         </div>
       </div>
