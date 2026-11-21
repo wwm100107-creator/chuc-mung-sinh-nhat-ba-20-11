@@ -13,18 +13,10 @@ import {
   INITIAL_LANTERNS,
   LETTER_CONTENT,
   SECRET_SEVENTH_BLESSING,
-  STORY_BEATS,
   getBirthdayDateInfo,
   type BlessingItem,
   type LanternWish,
 } from '../data/birthdayContent';
-
-export interface EditableStoryBeat {
-  id: string;
-  kicker: string;
-  title: string;
-  body: string;
-}
 
 export interface SiteContent {
   envelope: {
@@ -38,11 +30,6 @@ export interface SiteContent {
     welcomeTitleHighlight: string;
     welcomeDescription: string;
     scrollHint2: string;
-  };
-  story: {
-    topBadge: string;
-    paintingCaption: string;
-    beats: EditableStoryBeat[];
   };
   letter: {
     sealTop: string;
@@ -101,12 +88,7 @@ export function getDefaultSiteContent(): SiteContent {
       welcomeTitleTop: 'Chúc Mừng Sinh Nhật',
       welcomeTitleHighlight: 'Bà Yêu Quý',
       welcomeDescription: `${dateInfo.subStatusText}. Mỗi trang giấy màu nước tiếp theo là một lời chúc bình an con cháu vẽ dành tặng riêng Bà.`,
-      scrollHint2: 'Vuốt tiếp xuống để thưởng trà & đọc thư',
-    },
-    story: {
-      topBadge: dateInfo.badgeText,
-      paintingCaption: 'Hương trà thu · Sắc cúc vàng ngày 20 tháng 11',
-      beats: STORY_BEATS.map((b) => ({ ...b })),
+      scrollHint2: 'Vuốt tiếp xuống để mở cuộn thư chúc mừng Bà',
     },
     letter: {
       sealTop: '20',
@@ -156,11 +138,6 @@ function mergeWithDefaults(parsed: Partial<SiteContent>): SiteContent {
   const def = getDefaultSiteContent();
   return {
     envelope: { ...def.envelope, ...(parsed.envelope ?? {}) },
-    story: {
-      ...def.story,
-      ...(parsed.story ?? {}),
-      beats: parsed.story?.beats?.length ? parsed.story.beats : def.story.beats,
-    },
     letter: {
       ...def.letter,
       ...(parsed.letter ?? {}),

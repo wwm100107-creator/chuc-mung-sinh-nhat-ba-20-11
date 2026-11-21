@@ -40,39 +40,10 @@ export interface ChapterMeta {
 
 export const CHAPTERS_META: ChapterMeta[] = [
   { id: 'chuong-1-mo-thiep', num: '01', shortLabel: 'Mở thiệp', fullLabel: '01 Mở Thiệp' },
-  { id: 'chuong-2-huong-tra', num: '02', shortLabel: 'Hương trà', fullLabel: '02 Hương Trà' },
-  { id: 'chuong-3-thu-lua', num: '03', shortLabel: 'Thư lụa', fullLabel: '03 Thư Lụa' },
-  { id: 'chuong-4-loi-chuc', num: '04', shortLabel: 'Lời chúc', fullLabel: '04 Lời Chúc' },
-  { id: 'chuong-5-thoi-nen', num: '05', shortLabel: 'Thổi nến', fullLabel: '05 Thổi Nến' },
-  { id: 'chuong-6-hoa-dang', num: '06', shortLabel: 'Hoa đăng', fullLabel: '06 Hoa Đăng' },
-];
-
-export interface StoryBeat {
-  id: string;
-  kicker: string;
-  title: string;
-  body: string;
-}
-
-export const STORY_BEATS: StoryBeat[] = [
-  {
-    id: 'beat-1',
-    kicker: 'Nhịp 01 · Sắc Thu Tháng Mười Một',
-    title: 'Nắng Vàng Ghé Hiên Nhà',
-    body: 'Cứ mỗi độ 20 tháng 11 về, gió thu se lạnh lại mang theo hương cúc vàng và những buổi sớm bình yên bên ấm trà nóng của Bà.',
-  },
-  {
-    id: 'beat-2',
-    kicker: 'Nhịp 02 · Hơi Ấm Gia Đình',
-    title: 'Bàn Tay Tảo Tần Thương Yêu',
-    body: 'Từ bữa cơm nóng hổi đến lời dặn dò nhẹ nhàng khi trở trời, sự dịu dàng của Bà luôn là mái nhà êm nhất cho con cháu tìm về.',
-  },
-  {
-    id: 'beat-3',
-    kicker: 'Nhịp 03 · Kính Chúc Tuổi Mới',
-    title: 'An Nhiên & Trường Thọ',
-    body: 'Cháu kính chúc Bà thêm một tuổi mới thật khỏe mạnh, lòng thanh thản như tách trà sớm và luôn rạng rỡ tiếng cười bên con cháu.',
-  },
+  { id: 'chuong-3-thu-lua', num: '02', shortLabel: 'Thư lụa', fullLabel: '02 Thư Lụa' },
+  { id: 'chuong-4-loi-chuc', num: '03', shortLabel: 'Lời chúc', fullLabel: '03 Lời Chúc' },
+  { id: 'chuong-5-thoi-nen', num: '04', shortLabel: 'Bánh & Nến', fullLabel: '04 Bánh & Nến' },
+  { id: 'chuong-6-hoa-dang', num: '05', shortLabel: 'Hoa đăng', fullLabel: '05 Hoa Đăng' },
 ];
 
 export const LETTER_CONTENT = {

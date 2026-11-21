@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useSiteContent } from '../context/ContentContext';
 
-type EditorTab = 'all' | 'envelope' | 'story' | 'letter' | 'blessings' | 'cake' | 'finale';
+type EditorTab = 'all' | 'envelope' | 'letter' | 'blessings' | 'cake' | 'finale';
 
 const TABS: Array<{ id: EditorTab; label: string }> = [
   { id: 'all', label: 'Tất Cả Từ Trên Xuống Dưới' },
   { id: 'envelope', label: '01. Mở Thiệp' },
-  { id: 'story', label: '02. Hương Trà' },
-  { id: 'letter', label: '03. Bức Thư' },
-  { id: 'blessings', label: '04. 6 Lời Chúc & Quà 7' },
-  { id: 'cake', label: '05. Bánh & Nến' },
-  { id: 'finale', label: '06. Hoa Đăng & Thơ Kết' },
+  { id: 'letter', label: '02. Bức Thư' },
+  { id: 'blessings', label: '03. 6 Lời Chúc & Quà 7' },
+  { id: 'cake', label: '04. Bánh & Nến' },
+  { id: 'finale', label: '05. Hoa Đăng & Thơ Kết' },
 ];
 
 export function ContentEditorModal() {
@@ -59,7 +58,6 @@ export function ContentEditorModal() {
   };
 
   const showEnvelope = activeTab === 'all' || activeTab === 'envelope';
-  const showStory = activeTab === 'all' || activeTab === 'story';
   const showLetter = activeTab === 'all' || activeTab === 'letter';
   const showBlessings = activeTab === 'all' || activeTab === 'blessings';
   const showCake = activeTab === 'all' || activeTab === 'cake';
@@ -295,169 +293,12 @@ export function ContentEditorModal() {
             )}
 
             {/* =================================================
-                CHƯƠNG 2: HƯƠNG TRÀ THU & CÁC THẺ CÂU CHUYỆN
-                ================================================= */}
-            {showStory && (
-              <section className="editor-chapter-block">
-                <h3 className="editor-chapter-heading">
-                  Chương 2 · Hương Trà Thu &amp; Các Thẻ Câu Chuyện
-                </h3>
-
-                <div className="editor-visual-marker">
-                  <span>[ Tranh màu nước: Ấm trà men ngọc &amp; bó hoa cúc vàng ]</span>
-                </div>
-
-                <div className="field-group">
-                  <label>1. Chú thích ngay dưới bức tranh ấm trà</label>
-                  <input
-                    type="text"
-                    className="field-input"
-                    value={content.story.paintingCaption}
-                    onChange={(e) =>
-                      updateContent((prev) => ({
-                        ...prev,
-                        story: { ...prev.story, paintingCaption: e.target.value },
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label>2. Nhãn ngày tháng phía trên khung thẻ câu chuyện</label>
-                  <input
-                    type="text"
-                    className="field-input editor-input-badge"
-                    value={content.story.topBadge}
-                    onChange={(e) =>
-                      updateContent((prev) => ({
-                        ...prev,
-                        story: { ...prev.story, topBadge: e.target.value },
-                      }))
-                    }
-                  />
-                </div>
-
-                {content.story.beats.map((beat, idx) => (
-                  <div key={beat.id} className="editor-subcard">
-                    <div className="editor-subcard-header">
-                      <h4>Thẻ câu chuyện 0{idx + 1}</h4>
-                      {content.story.beats.length > 1 && (
-                        <button
-                          type="button"
-                          className="editor-remove-btn"
-                          onClick={() =>
-                            updateContent((prev) => ({
-                              ...prev,
-                              story: {
-                                ...prev.story,
-                                beats: prev.story.beats.filter((_, i) => i !== idx),
-                              },
-                            }))
-                          }
-                        >
-                          Xóa thẻ này
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="field-group">
-                      <label>Dòng nhãn nhỏ đầu thẻ</label>
-                      <input
-                        type="text"
-                        className="field-input editor-input-badge"
-                        value={beat.kicker}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          updateContent((prev) => ({
-                            ...prev,
-                            story: {
-                              ...prev.story,
-                              beats: prev.story.beats.map((b, i) =>
-                                i === idx ? { ...b, kicker: val } : b,
-                              ),
-                            },
-                          }));
-                        }}
-                      />
-                    </div>
-
-                    <div className="field-group">
-                      <label>Tiêu đề lớn giữa thẻ</label>
-                      <input
-                        type="text"
-                        className="field-input editor-input-title"
-                        value={beat.title}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          updateContent((prev) => ({
-                            ...prev,
-                            story: {
-                              ...prev.story,
-                              beats: prev.story.beats.map((b, i) =>
-                                i === idx ? { ...b, title: val } : b,
-                              ),
-                            },
-                          }));
-                        }}
-                      />
-                    </div>
-
-                    <div className="field-group">
-                      <label>Đoạn nội dung bên dưới tiêu đề</label>
-                      <textarea
-                        rows={3}
-                        className="field-input"
-                        value={beat.body}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          updateContent((prev) => ({
-                            ...prev,
-                            story: {
-                              ...prev.story,
-                              beats: prev.story.beats.map((b, i) =>
-                                i === idx ? { ...b, body: val } : b,
-                              ),
-                            },
-                          }));
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  className="editor-add-btn"
-                  onClick={() =>
-                    updateContent((prev) => ({
-                      ...prev,
-                      story: {
-                        ...prev.story,
-                        beats: [
-                          ...prev.story.beats,
-                          {
-                            id: `beat-${Date.now()}`,
-                            kicker: `Khúc Mùa Thu · 0${prev.story.beats.length + 1}`,
-                            title: 'Lời Chúc Yêu Thương Mới',
-                            body: 'Kính chúc Bà luôn mạnh khỏe, bình an và ngập tràn niềm vui bên con cháu.',
-                          },
-                        ],
-                      },
-                    }))
-                  }
-                >
-                  + Thêm Thẻ Câu Chuyện Mới
-                </button>
-              </section>
-            )}
-
-            {/* =================================================
-                CHƯƠNG 3: CUỘN THƯ LỤA & CON DẤU TRIỆN ĐỎ
+                CHƯƠNG 2: CUỘN THƯ LỤA & CON DẤU TRIỆN ĐỎ
                 ================================================= */}
             {showLetter && (
               <section className="editor-chapter-block">
                 <h3 className="editor-chapter-heading">
-                  Chương 3 · Cuộn Thư Lụa &amp; Con Dấu Triện Đỏ
+                  Chương 2 · Cuộn Thư Lụa &amp; Con Dấu Triện Đỏ
                 </h3>
 
                 <div className="editor-visual-marker">
@@ -613,16 +454,16 @@ export function ContentEditorModal() {
             )}
 
             {/* =================================================
-                CHƯƠNG 4: VÒNG HOA 6 LỜI CHÚC VÀNG & QUÀ THỨ 7
+                CHƯƠNG 3: VÒNG HOA 6 LỜI CHÚC VÀNG & QUÀ THỨ 7
                 ================================================= */}
             {showBlessings && (
               <section className="editor-chapter-block">
                 <h3 className="editor-chapter-heading">
-                  Chương 4 · Vòng Hoa Cúc Sáu Lời Chúc Vàng &amp; Món Quà Thứ Bảy
+                  Chương 3 · Vòng Hoa Cúc Sáu Lời Chúc Vàng &amp; Món Quà Thứ Bảy
                 </h3>
 
                 <div className="field-group">
-                  <label>1. Dòng nhãn phụ trên cùng Chương 4</label>
+                  <label>1. Dòng nhãn phụ trên cùng Chương 3</label>
                   <input
                     type="text"
                     className="field-input editor-input-badge"
@@ -637,7 +478,7 @@ export function ContentEditorModal() {
                 </div>
 
                 <div className="field-group">
-                  <label>2. Tiêu đề chính Chương 4</label>
+                  <label>2. Tiêu đề chính Chương 3</label>
                   <input
                     type="text"
                     className="field-input editor-input-title"
@@ -652,7 +493,7 @@ export function ContentEditorModal() {
                 </div>
 
                 <div className="field-group">
-                  <label>3. Dòng mô tả ngay dưới tiêu đề Chương 4</label>
+                  <label>3. Dòng mô tả ngay dưới tiêu đề Chương 3</label>
                   <input
                     type="text"
                     className="field-input"
@@ -816,7 +657,7 @@ export function ContentEditorModal() {
                 </div>
 
                 <div className="editor-subcard">
-                  <h4>Thẻ Cuối Chương 4 · Món Quà Thứ Bảy Đặc Biệt</h4>
+                  <h4>Thẻ Cuối Chương 3 · Món Quà Thứ Bảy Đặc Biệt</h4>
 
                   <div className="field-group">
                     <label>1. Chữ hiện ở tâm vòng hoa cúc (ví dụ: Món Quà 7)</label>
@@ -906,16 +747,16 @@ export function ContentEditorModal() {
             )}
 
             {/* =================================================
-                CHƯƠNG 5: CHIẾC BÁNH KEM MÀU NƯỚC & THẮP NẾN
+                CHƯƠNG 4: CHIẾC BÁNH KEM MÀU NƯỚC & THẮP NẾN
                 ================================================= */}
             {showCake && (
               <section className="editor-chapter-block">
                 <h3 className="editor-chapter-heading">
-                  Chương 5 · Chiếc Bánh Kem Màu Nước &amp; Thắp Nến
+                  Chương 4 · Chiếc Bánh Kem Màu Nước &amp; Thắp Nến
                 </h3>
 
                 <div className="field-group">
-                  <label>1. Dòng nhãn phụ trên cùng Chương 5</label>
+                  <label>1. Dòng nhãn phụ trên cùng Chương 4</label>
                   <input
                     type="text"
                     className="field-input editor-input-badge"
@@ -930,7 +771,7 @@ export function ContentEditorModal() {
                 </div>
 
                 <div className="field-group">
-                  <label>2. Tiêu đề chính Chương 5</label>
+                  <label>2. Tiêu đề chính Chương 4</label>
                   <input
                     type="text"
                     className="field-input editor-input-title"
@@ -945,7 +786,7 @@ export function ContentEditorModal() {
                 </div>
 
                 <div className="field-group">
-                  <label>3. Dòng mô tả ngay dưới tiêu đề Chương 5</label>
+                  <label>3. Dòng mô tả ngay dưới tiêu đề Chương 4</label>
                   <textarea
                     rows={2}
                     className="field-input"
@@ -1000,12 +841,12 @@ export function ContentEditorModal() {
             )}
 
             {/* =================================================
-                CHƯƠNG 6: HỒ HOA ĐĂNG, LỜI THƠ KẾT & CHÂN TRANG
+                CHƯƠNG 5: HỒ HOA ĐĂNG, LỜI THƠ KẾT & CHÂN TRANG
                 ================================================= */}
             {showFinale && (
               <section className="editor-chapter-block">
                 <h3 className="editor-chapter-heading">
-                  Chương 6 · Hồ Hoa Đăng, Lời Thơ Kết &amp; Chân Trang
+                  Chương 5 · Hồ Hoa Đăng, Lời Thơ Kết &amp; Chân Trang
                 </h3>
 
                 <div className="field-group">

@@ -6,7 +6,6 @@ import { ContentEditorModal } from './components/ContentEditorModal';
 import { EnvelopeIntro } from './components/EnvelopeIntro';
 import { FinaleSection } from './components/FinaleSection';
 import { FloatingControls } from './components/FloatingControls';
-import { HeroSection } from './components/HeroSection';
 import { LanternRiver } from './components/LanternRiver';
 import { LetterSection } from './components/LetterSection';
 import { ContentProvider } from './context/ContentContext';
@@ -21,7 +20,7 @@ export default function App() {
   const musicBox = useMemo(() => new MusicBoxController(), []);
   const { globalProgress, activeChapterIndex, velocityRef } = useGlobalScrollStory(CHAPTER_IDS);
 
-  const nightMode = activeChapterIndex >= 4;
+  const nightMode = activeChapterIndex >= 3;
 
   // Automatically start the gentle Web Audio music box on first user gesture
   useEffect(() => {
@@ -60,7 +59,6 @@ export default function App() {
       <div className="app-shell">
         <main>
           <EnvelopeIntro onBurst={handleBurst} />
-          <HeroSection />
           <LetterSection />
           <BlessingsGrid onBurst={handleBurst} />
           <BirthdayCake onGrandCelebrate={handleGrandCelebrate} />
