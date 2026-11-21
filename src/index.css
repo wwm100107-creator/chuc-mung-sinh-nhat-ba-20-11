@@ -1773,6 +1773,35 @@ textarea:focus-visible {
   font-size: 0.88rem;
 }
 
+.editor-visual-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.9rem;
+  border-radius: 12px;
+  border: 1px dashed var(--ink-line);
+  background: rgba(235, 178, 86, 0.12);
+  color: var(--sepia);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.editor-input-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.22rem;
+  color: var(--crimson);
+}
+
+.editor-input-badge {
+  font-weight: 600;
+  color: var(--sepia);
+  background: #fdf9f0;
+}
+
 .editor-footer {
   display: flex;
   flex-wrap: wrap;
