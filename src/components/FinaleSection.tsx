@@ -1,10 +1,35 @@
+import { useEffect, useRef, useState } from 'react';
 import { useSiteContent } from '../context/ContentContext';
 
 export function FinaleSection() {
   const { content } = useSiteContent();
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setIsVisible(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.15 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   return (
-    <section className="finale-section" aria-labelledby="finale-heading">
+    <section
+      ref={sectionRef}
+      className={`finale-section ${isVisible ? 'is-revealed' : ''}`}
+      aria-labelledby="finale-heading"
+    >
       <div className="container">
         <div className="storybook-sheet finale-medallion">
           <div className="finale-watercolor-vignette vfx-levitate">

@@ -27,15 +27,14 @@ export interface ChapterScrollState {
 }
 
 /**
- * Silky-smooth 60/120fps scroll scrubber for sticky scrollytelling tracks.
- * Computes:
+ * Frame-rate-independent 60/120fps scroll scrubber for sticky scrollytelling tracks.
  * - `enterProgress` [0..1]: as the chapter rises from bottom of viewport into pinned position
- * - `progress` [0..1]: while the chapter is pinned
- * - `exitProgress` [0..1]: as the chapter unpins and glides out toward the next chapter
+ * - `progress` [0..1]: while the chapter is pinned (stays at 100% clarity while pinned!)
+ * - `exitProgress` [0..1]: ONLY after the chapter unpins at the end (`rect.bottom < vh`)
  */
 export function useChapterScroll(
   trackRef: RefObject<HTMLElement | null>,
-  lerpFactor = 0.11,
+  lerpFactor = 0.14,
 ): ChapterScrollState {
   const [state, setState] = useState<ChapterScrollState>({
     progress: 0,
@@ -48,6 +47,7 @@ export function useChapterScroll(
   const smoothedRef = useRef({ p: 0, enter: 1, exit: 0 });
   const lastReportedRef = useRef({ p: 0, enter: 1, exit: 0 });
   const lastInViewRef = useRef(false);
+  const lastFrameTimeRef = useRef<number>(0);
 
   useEffect(() => {
     const el = trackRef.current;
@@ -65,10 +65,10 @@ export function useChapterScroll(
       const scrollable = Math.max(1, rect.height - vh);
 
       const rawP = clamp(-rect.top / scrollable, 0, 1);
-      // Enter goes 0 -> 1 as rect.top moves from vh*0.85 -> 0
+      // Enter goes 0 -> 1 as rect.top moves from vh*0.82 -> 0
       const rawEnter = clamp(1 - rect.top / (vh * 0.82), 0, 1);
-      // Exit goes 0 -> 1 in the final 16% of the track and as rect.bottom leaves
-      const rawExit = clamp((rawP - 0.86) / 0.14, 0, 1);
+      // Exit goes 0 -> 1 ONLY as the sticky container unpins at the bottom (rect.bottom moves from vh -> vh*0.12)
+      const rawExit = clamp((vh - rect.bottom) / (vh * 0.88), 0, 1);
       const inView = rect.bottom > -200 && rect.top < vh + 200;
 
       targetRef.current = { p: rawP, enter: rawEnter, exit: rawExit };
@@ -78,9 +78,19 @@ export function useChapterScroll(
       }
     };
 
-    const tick = () => {
+    const tick = (now: number) => {
       const node = trackRef.current;
       if (!node) return;
+
+      const dt = lastFrameTimeRef.current
+        ? Math.min(0.05, Math.max(0.004, (now - lastFrameTimeRef.current) / 1000))
+        : 1 / 60;
+      lastFrameTimeRef.current = now;
+
+      // Normalize lerpFactor to 60fps reference so 60Hz, 90Hz, and 120Hz ProMotion feel identical
+      const frameScale = dt * 60;
+      const alphaP = 1 - Math.pow(1 - lerpFactor, frameScale);
+      const alphaEdge = 1 - Math.pow(1 - Math.min(0.45, lerpFactor * 1.25), frameScale);
 
       const t = targetRef.current;
       const s = smoothedRef.current;
@@ -97,10 +107,11 @@ export function useChapterScroll(
         s.enter = t.enter;
         s.exit = t.exit;
         active = false;
+        lastFrameTimeRef.current = 0;
       } else {
-        s.p += dp * lerpFactor;
-        s.enter += dEn * (lerpFactor * 1.15);
-        s.exit += dEx * (lerpFactor * 1.15);
+        s.p += dp * alphaP;
+        s.enter += dEn * alphaEdge;
+        s.exit += dEx * alphaEdge;
         rafId = window.requestAnimationFrame(tick);
       }
 
@@ -117,8 +128,8 @@ export function useChapterScroll(
       if (
         edgeSnapped ||
         Math.abs(p - last.p) >= 0.001 ||
-        Math.abs(enter - last.enter) >= 0.004 ||
-        Math.abs(exit - last.exit) >= 0.004
+        Math.abs(enter - last.enter) >= 0.003 ||
+        Math.abs(exit - last.exit) >= 0.003
       ) {
         lastReportedRef.current = { p, enter, exit };
         setState({
@@ -134,6 +145,7 @@ export function useChapterScroll(
       measureTarget();
       if (!active) {
         active = true;
+        lastFrameTimeRef.current = performance.now();
         rafId = window.requestAnimationFrame(tick);
       }
     };
