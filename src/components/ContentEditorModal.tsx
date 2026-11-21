@@ -16,6 +16,7 @@ export function ContentEditorModal() {
   const {
     content,
     updateContent,
+    exportContentJson,
     resetContent,
     createShareableGiftUrl,
   } = useSiteContent();
@@ -55,6 +56,18 @@ export function ContentEditorModal() {
       setCopyStatus('Đã tạo link gửi tặng Bà!');
     }
     window.setTimeout(() => setCopyStatus(null), 4000);
+  };
+
+  const handleCopyJsonForDeploy = async () => {
+    const json = exportContentJson();
+    try {
+      await navigator.clipboard.writeText(json);
+      setCopyStatus('Đã sao chép toàn bộ chữ đã sửa! Hãy dán vào khung chat để lưu vĩnh viễn lên web.');
+    } catch {
+      window.prompt('Sao chép đoạn mã chữ đã sửa này và gửi vào khung chat:', json);
+      setCopyStatus('Đã tạo mã sao lưu toàn bộ chữ!');
+    }
+    window.setTimeout(() => setCopyStatus(null), 5000);
   };
 
   const showEnvelope = activeTab === 'all' || activeTab === 'envelope';
@@ -1098,6 +1111,9 @@ export function ContentEditorModal() {
           </div>
 
           <div className="editor-footer-right">
+            <button type="button" className="btn-secondary" onClick={handleCopyJsonForDeploy}>
+              Sao Chép Mã Chữ (Lưu Vĩnh Viễn)
+            </button>
             <button type="button" className="btn-secondary" onClick={handleCopyGiftLink}>
               Sao Chép Link Gửi Bà
             </button>

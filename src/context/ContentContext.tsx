@@ -74,6 +74,12 @@ export interface SiteContent {
 }
 
 const STORAGE_KEY = 'snvv-ba-editable-content-v4';
+const LEGACY_KEYS = [
+  'snvv-ba-editable-content-v4',
+  'snvv-ba-editable-content-v3',
+  'snvv-ba-editable-content-v2',
+  'snvv-ba-editable-content-v1',
+];
 
 export function getDefaultSiteContent(): SiteContent {
   const dateInfo = getBirthdayDateInfo();
@@ -162,6 +168,44 @@ function mergeWithDefaults(parsed: Partial<SiteContent>): SiteContent {
   };
 }
 
+function hasCustomUserEdits(candidate: SiteContent, def: SiteContent): boolean {
+  if (candidate.envelope.recipientTitle !== def.envelope.recipientTitle) return true;
+  if (candidate.envelope.welcomeTitleHighlight !== def.envelope.welcomeTitleHighlight) return true;
+  if (candidate.letter.salutation !== def.letter.salutation) return true;
+  if (candidate.letter.signature !== def.letter.signature) return true;
+  if (JSON.stringify(candidate.letter.paragraphs) !== JSON.stringify(def.letter.paragraphs)) return true;
+  if (JSON.stringify(candidate.blessings.items) !== JSON.stringify(def.blessings.items)) return true;
+  if (candidate.blessings.secretGift.message !== def.blessings.secretGift.message) return true;
+  if (candidate.cake.wishTitle !== def.cake.wishTitle) return true;
+  if (candidate.cake.wishMessage !== def.cake.wishMessage) return true;
+  if (JSON.stringify(candidate.finale.lanterns) !== JSON.stringify(def.finale.lanterns)) return true;
+  if (JSON.stringify(candidate.finale.poemLines) !== JSON.stringify(def.finale.poemLines)) return true;
+  if (candidate.finale.footerText !== def.finale.footerText) return true;
+  return false;
+}
+
+function loadBestSavedContent(def: SiteContent): SiteContent {
+  // Check v4 -> v3 -> v2 -> v1 and prioritize the newest key that actually contains custom user edits
+  let fallbackParsed: SiteContent | null = null;
+  for (const key of LEGACY_KEYS) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw) as Partial<SiteContent>;
+      const merged = mergeWithDefaults(parsed);
+      if (hasCustomUserEdits(merged, def)) {
+        return merged;
+      }
+      if (!fallbackParsed) {
+        fallbackParsed = merged;
+      }
+    } catch {
+      // Ignore corrupt key
+    }
+  }
+  return fallbackParsed ?? def;
+}
+
 function encodeContentToBase64(content: SiteContent): string {
   const json = JSON.stringify(content);
   const bytes = new TextEncoder().encode(json);
@@ -190,6 +234,8 @@ function decodeContentFromBase64(b64: string): SiteContent | null {
 interface ContentContextValue {
   content: SiteContent;
   updateContent: (updater: (prev: SiteContent) => SiteContent) => void;
+  importContentJson: (rawJson: string) => boolean;
+  exportContentJson: () => string;
   resetContent: () => void;
   createShareableGiftUrl: () => string;
   isGiftViewMode: boolean;
@@ -213,18 +259,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    try {
-      const saved =
-        window.localStorage.getItem(STORAGE_KEY) ??
-        window.localStorage.getItem('snvv-ba-editable-content-v3');
-      if (saved) {
-        const parsed = JSON.parse(saved) as Partial<SiteContent>;
-        return mergeWithDefaults(parsed);
-      }
-    } catch {
-      // Fallback to default
-    }
-    return def;
+    return loadBestSavedContent(def);
   });
 
   useEffect(() => {
@@ -239,23 +274,51 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     if (typeof document !== 'undefined' && content.envelope.pageTitle) {
       document.title = content.envelope.pageTitle;
     }
+  }, [content.envelope.pageTitle]);
+
+  const persistToStorage = useCallback((next: SiteContent) => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {
       // Ignore quota errors
     }
-  }, [content]);
-
-  const updateContent = useCallback((updater: (prev: SiteContent) => SiteContent) => {
-    setContent((prev) => updater(prev));
   }, []);
+
+  const updateContent = useCallback(
+    (updater: (prev: SiteContent) => SiteContent) => {
+      setContent((prev) => {
+        const next = updater(prev);
+        persistToStorage(next);
+        return next;
+      });
+    },
+    [persistToStorage],
+  );
+
+  const exportContentJson = useCallback(() => JSON.stringify(content, null, 2), [content]);
+
+  const importContentJson = useCallback(
+    (rawJson: string) => {
+      try {
+        const parsed = JSON.parse(rawJson) as Partial<SiteContent>;
+        const merged = mergeWithDefaults(parsed);
+        setContent(merged);
+        persistToStorage(merged);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [persistToStorage],
+  );
 
   const resetContent = useCallback(() => {
     const def = getDefaultSiteContent();
     setContent(def);
     try {
-      window.localStorage.removeItem(STORAGE_KEY);
-      window.localStorage.removeItem('snvv-ba-editable-content-v3');
+      for (const key of LEGACY_KEYS) {
+        window.localStorage.removeItem(key);
+      }
       if (window.location.hash.startsWith('#gift=')) {
         window.history.replaceState(null, '', window.location.pathname);
       }
@@ -274,11 +337,21 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     () => ({
       content,
       updateContent,
+      importContentJson,
+      exportContentJson,
       resetContent,
       createShareableGiftUrl,
       isGiftViewMode,
     }),
-    [content, updateContent, resetContent, createShareableGiftUrl, isGiftViewMode],
+    [
+      content,
+      updateContent,
+      importContentJson,
+      exportContentJson,
+      resetContent,
+      createShareableGiftUrl,
+      isGiftViewMode,
+    ],
   );
 
   return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>;
