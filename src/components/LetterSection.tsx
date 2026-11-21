@@ -1,18 +1,50 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSiteContent } from '../context/ContentContext';
 import { clamp, smoothstep, useChapterScroll } from '../utils/useScrollStory';
 
 export function LetterSection() {
   const trackRef = useRef<HTMLElement | null>(null);
+  const windowRef = useRef<HTMLDivElement | null>(null);
+  const contentTrackRef = useRef<HTMLDivElement | null>(null);
+  const [maxGlidePx, setMaxGlidePx] = useState(0);
+
   const { progress, enterProgress, exitProgress } = useChapterScroll(trackRef, 0.12);
   const { content } = useSiteContent();
 
   const paragraphs = content.letter.paragraphs;
   const totalParagraphs = Math.max(1, paragraphs.length);
-  const unrollFactor = smoothstep(progress, 0.0, 0.16);
-  const readingPos = clamp((progress - 0.06) / 0.72, 0, 0.9999);
-  const activeParaIndex = Math.min(totalParagraphs - 1, Math.floor(readingPos * totalParagraphs));
+  const unrollFactor = smoothstep(progress, 0.0, 0.14);
+  const readingPos = clamp((progress - 0.05) / 0.74, 0, 1);
+  const activeParaIndex = Math.min(
+    totalParagraphs - 1,
+    Math.floor(clamp(readingPos, 0, 0.9999) * totalParagraphs),
+  );
   const sealStamped = progress >= 0.78;
+
+  useEffect(() => {
+    const measureOverflow = () => {
+      const winEl = windowRef.current;
+      const trkEl = contentTrackRef.current;
+      if (!winEl || !trkEl) return;
+      const overflow = Math.max(0, trkEl.scrollHeight - winEl.clientHeight);
+      setMaxGlidePx(overflow);
+    };
+
+    measureOverflow();
+    window.addEventListener('resize', measureOverflow);
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(measureOverflow);
+      if (windowRef.current) ro.observe(windowRef.current);
+      if (contentTrackRef.current) ro.observe(contentTrackRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', measureOverflow);
+      ro?.disconnect();
+    };
+  }, [paragraphs, content.letter.salutation, content.letter.closing, content.letter.signature]);
 
   const tokenizedParagraphs = useMemo(() => {
     const wordsPerPara = paragraphs.map((p) => p.split(' '));
@@ -29,6 +61,9 @@ export function LetterSection() {
   }, [paragraphs]);
 
   const inkPercent = Math.round(readingPos * 100);
+  const glideProgress = smoothstep(readingPos, 0.08, 0.94);
+  const glideY = (-glideProgress * maxGlidePx).toFixed(1);
+
   const sceneOpacity = clamp(enterProgress * 1.15 - exitProgress * 0.7, 0, 1).toFixed(3);
   const sceneY = ((1 - enterProgress) * 48 - exitProgress * 38).toFixed(1);
   const sceneScale = (0.93 + enterProgress * 0.07 - exitProgress * 0.05).toFixed(3);
@@ -90,37 +125,47 @@ export function LetterSection() {
               {content.letter.salutation}
             </h2>
 
-            {/* Unified Full-Letter Word-by-Word Sepia & Crimson Ink Scrubbing (Desktop & Mobile) */}
-            <div className="letter-body-unified">
-              {tokenizedParagraphs.map((words, pIdx) => {
-                const isActivePara = pIdx === activeParaIndex;
-                return (
-                  <p
-                    key={pIdx}
-                    className={`letter-para-scrub ${isActivePara ? 'is-active' : ''}`}
-                  >
-                    {words.map((item, wIdx) => {
-                      const delta = readingPos - item.ratio;
-                      const isWritten = delta >= -0.015 || sealStamped;
-                      const isBrushTip = Math.abs(delta) < 0.028 && !sealStamped;
-                      return (
-                        <span
-                          key={wIdx}
-                          className={`scrub-word ${isWritten ? 'is-written' : ''} ${isBrushTip ? 'is-brush-tip' : ''}`}
-                        >
-                          {item.word}{' '}
-                        </span>
-                      );
-                    })}
-                  </p>
-                );
-              })}
-            </div>
+            <div ref={windowRef} className="letter-scroll-window">
+              <div
+                ref={contentTrackRef}
+                className="letter-scroll-track"
+                style={{
+                  transform: `translate3d(0, ${glideY}px, 0)`,
+                }}
+              >
+                <div className="letter-body-unified">
+                  {tokenizedParagraphs.map((words, pIdx) => {
+                    const isActivePara = pIdx === activeParaIndex;
+                    return (
+                      <p
+                        key={pIdx}
+                        className={`letter-para-scrub ${isActivePara ? 'is-active' : ''}`}
+                      >
+                        {words.map((item, wIdx) => {
+                          // Lead the ink reveal slightly ahead of scroll so the line Bà is reading is always full dark ink
+                          const delta = readingPos + 0.08 - item.ratio;
+                          const isWritten = delta >= -0.02 || sealStamped;
+                          const isBrushTip = Math.abs(delta) < 0.032 && !sealStamped;
+                          return (
+                            <span
+                              key={wIdx}
+                              className={`scrub-word ${isWritten ? 'is-written' : ''} ${isBrushTip ? 'is-brush-tip' : ''}`}
+                            >
+                              {item.word}{' '}
+                            </span>
+                          );
+                        })}
+                      </p>
+                    );
+                  })}
+                </div>
 
-            <footer className={`letter-signoff ${sealStamped ? 'is-revealed' : ''}`}>
-              <p className="letter-closing">{content.letter.closing}</p>
-              <p className="letter-signature">{content.letter.signature}</p>
-            </footer>
+                <footer className={`letter-signoff ${sealStamped ? 'is-revealed' : ''}`}>
+                  <p className="letter-closing">{content.letter.closing}</p>
+                  <p className="letter-signature">{content.letter.signature}</p>
+                </footer>
+              </div>
+            </div>
           </div>
         </div>
       </div>
